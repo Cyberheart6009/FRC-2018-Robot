@@ -5,11 +5,27 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
+
+//|**************************************************************|
+//|				Cyberheart 2018 First Power Up 					 |
+//|																 |
+//|																 |
+//|**************************************************************|
+
+
+
 package org.usfirst.frc.team6009.robot;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+// New Imports
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SpeedController;
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.Spark;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -23,6 +39,15 @@ public class Robot extends IterativeRobot {
 	private static final String kCustomAuto = "My Auto";
 	private String m_autoSelected;
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
+	
+	SpeedController leftFront, leftBack, rightFront, rightBack;
+	
+	// Speed controller group used for new differential drive class
+	SpeedControllerGroup leftChassis, rightChassis;
+	
+	DifferentialDrive chassis;
+	
+	Joystick driver;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -33,6 +58,14 @@ public class Robot extends IterativeRobot {
 		m_chooser.addDefault("Default Auto", kDefaultAuto);
 		m_chooser.addObject("My Auto", kCustomAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
+		
+		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
+		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
+		
+		rightChassis.setInverted(true);
+		
+		chassis = new DifferentialDrive(leftChassis, rightChassis);
+		
 	}
 
 	/**
