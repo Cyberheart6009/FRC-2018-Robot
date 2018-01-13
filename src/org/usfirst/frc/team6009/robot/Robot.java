@@ -134,7 +134,7 @@ public class Robot extends IterativeRobot {
 	selectButton = driver.getRawButton(7);
 	startButton = driver.getRawButton(8);
 	
-	chassis.arcadeDrive((driver.getX()), (driver.getY()));
+	chassis.arcadeDrive((driver.getX()), -(driver.getY()));
 	
 	elevator.set(operator.getRawAxis(5));
 	
