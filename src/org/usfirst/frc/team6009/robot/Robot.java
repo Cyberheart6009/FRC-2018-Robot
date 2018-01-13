@@ -16,6 +16,7 @@
 
 package org.usfirst.frc.team6009.robot;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -85,6 +86,23 @@ public class Robot extends IterativeRobot {
 		// autoSelected = SmartDashboard.getString("Auto Selector",
 		// defaultAuto);
 		System.out.println("Auto selected: " + m_autoSelected);
+		
+		//FMS message about switch orientation
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+		//Test the alliance side for the first switch
+		if (gameData.charAt(0) == 'L') {
+			System.out.println("Left");
+		} else {
+			System.out.println("Right");
+		}
+		//Test the alliance side for the scale
+		if (gameData.charAt(0) == 'L') {
+			System.out.println("Left");
+		} else {
+			System.out.println("Right");
+		}
 	}
 
 	/**
