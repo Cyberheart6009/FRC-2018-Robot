@@ -8,7 +8,7 @@
 
 //|**************************************************************|
 //|				Cyberheart 2018 First Power Up 					 |
-//|																 |
+//|					  Katarina Mavric							 |
 //|																 |
 //|**************************************************************|
 
@@ -26,6 +26,8 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.DriverStation;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -38,7 +40,7 @@ public class Robot extends IterativeRobot {
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
 	private String m_autoSelected;
-	private SendableChooser<String> m_chooser = new SendableChooser<>();
+	private SendableChooser<String> chooser = new SendableChooser<>();
 	
 	SpeedController leftFront, leftBack, rightFront, rightBack;
 	
@@ -47,7 +49,8 @@ public class Robot extends IterativeRobot {
 	
 	DifferentialDrive chassis;
 	
-	Joystick driver;
+	Joystick driver; 
+	
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -55,14 +58,24 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void robotInit() {
-		m_chooser.addDefault("Default Auto", kDefaultAuto);
-		m_chooser.addObject("My Auto", kCustomAuto);
-		SmartDashboard.putData("Auto choices", m_chooser);
+		chooser.addDefault("Default Auto", kDefaultAuto);
+		chooser.addObject("My Auto", kCustomAuto);
+		
+		SmartDashboard.putData("Auto choices", chooser);
+		SmartDashboard.putData("gameData", chooser);
+		
+		leftFront = new Spark(0);
+		leftBack = new Spark(1);
+		
+		rightFront = new Spark(2);
+		rightBack = new Spark(3);
 		
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		
 		rightChassis.setInverted(true);
+		
+		driver = new Joystick(0);
 		
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
@@ -81,10 +94,27 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousInit() {
-		m_autoSelected = m_chooser.getSelected();
+		m_autoSelected = chooser.getSelected();
 		// autoSelected = SmartDashboard.getString("Auto Selector",
 		// defaultAuto);
 		System.out.println("Auto selected: " + m_autoSelected);
+		
+		String gameData;
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+		if(gameData.charAt(0) == 'L'){
+			
+		}
+		else{
+			
+		}
+		
+		if(gameData.charAt(1) == 'L'){
+			
+		}
+		else{
+			
+		}
 	}
 
 	/**
