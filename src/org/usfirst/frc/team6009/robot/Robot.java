@@ -26,6 +26,8 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.Ultrasonic;
+import edu.wpi.first.wpilibj.Servo;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -48,7 +50,14 @@ public class Robot extends IterativeRobot {
 	DifferentialDrive chassis;
 	
 	Joystick driver;
+	
+	Servo leftServo, rightServo;
 
+	Ultrasonic ultra = new Ultrasonic(1,1); // creates the ultra object andassigns ultra to be an ultrasonic sensor which uses DigitalOutput 1 for 
+    										// the echo pulse and DigitalInput 1 for the trigger pulse
+
+	
+	
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
@@ -65,6 +74,15 @@ public class Robot extends IterativeRobot {
 		rightChassis.setInverted(true);
 		
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
+		
+		driver = new Joystick(0);
+		
+
+		leftServo = new Servo(8);
+		
+		rightServo = new Servo(9);
+		
+		ultra.setAutomaticMode(true); // turns on automatic mode
 		
 	}
 
@@ -108,6 +126,23 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		boolean a = driver.getRawButton(0);
+		boolean b = driver.getRawButton(1);
+		
+		if (a) {
+			leftServo.setAngle(180);
+			rightServo.setAngle(180);
+			
+
+		}
+		if (b) {
+			leftServo.setAngle(0);
+			rightServo.setAngle(0);
+		}
+	}
+	
+	public void disabledPeriodic() {
+		System.out.println("Distance: " + ultrasonicSample());
 	}
 
 	/**
@@ -116,4 +151,10 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void testPeriodic() {
 	}
+	
+    public double ultrasonicSample() {
+    	double range = ultra.getRangeInches(); // reads the range on the ultrasonic sensor
+    	return range;
+    }
+
 }
