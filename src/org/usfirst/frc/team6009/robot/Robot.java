@@ -5,27 +5,19 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
-
-//|**************************************************************|
-//|				Cyberheart 2018 First Power Up 					 |
-//|																 |
-//|																 |
-//|**************************************************************|
-
-
-
 package org.usfirst.frc.team6009.robot;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-// New Imports
+//New Imports
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.DigitalInput;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -34,13 +26,14 @@ import edu.wpi.first.wpilibj.Spark;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
+			
 public class Robot extends IterativeRobot {
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
 	private String m_autoSelected;
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
-	SpeedController leftFront, leftBack, rightFront, rightBack;
+	SpeedController leftFront, leftBack, rightFront, rightBack, elevator, climber, gripper;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
@@ -48,7 +41,12 @@ public class Robot extends IterativeRobot {
 	DifferentialDrive chassis;
 	
 	Joystick driver;
-
+	
+	Joystick operator;
+	
+	DigitalInput limitSwitch;
+	
+	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumperButton, rbumperButton;
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
@@ -66,8 +64,23 @@ public class Robot extends IterativeRobot {
 		
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
+		operator = new Joystick(0);
+		driver = new Joystick(1);
+		
+		
+		//These are the motors
+		leftFront = new Spark(0);
+		leftBack = new Spark(1);
+		rightFront = new Spark(2);
+		rightBack = new Spark(3);
+		climber = new Spark(4);
+		elevator = new Spark(5);
+		gripper = new Spark(6);
+		limitSwitch = new DigitalInput(0);
+		
 	}
 
+	
 	/**
 	 * This autonomous (along with the chooser code above) shows how to select
 	 * between different autonomous modes using the dashboard. The sendable
@@ -108,6 +121,40 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		
+	//this makes it so that when the limit switch is pressed, the elevator stops (I think we did this right)
+	while (limitSwitch.get())
+		elevator.set(0);
+	aButton = driver.getRawButton(1);
+	bButton = driver.getRawButton(2);
+	xButton = driver.getRawButton(3);
+	yButton = driver.getRawButton(4);
+	lbumperButton = driver.getRawButton(5);
+	rbumperButton = driver.getRawButton(6);
+	selectButton = driver.getRawButton(7);
+	startButton = driver.getRawButton(8);
+	
+	chassis.arcadeDrive((driver.getX()), -(driver.getY()));
+	
+	elevator.set(operator.getRawAxis(5));
+	
+	if (aButton == true) {
+		climber.set(1);
+	}
+	else {
+		climber.set(0);
+	}
+	
+	
+	if (bButton == true) {
+		gripper.set(1);
+	}
+	else if (xButton == true) {
+		gripper.set(-1);
+	}
+	else {
+		gripper.set(0);
+	}
 	}
 
 	/**
