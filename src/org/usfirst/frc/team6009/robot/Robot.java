@@ -12,8 +12,6 @@
 //|																 |
 //|**************************************************************|
 
-
-
 package org.usfirst.frc.team6009.robot;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -90,7 +88,6 @@ public class Robot extends IterativeRobot {
 		//FMS message about switch orientation
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		
 		//Test the alliance side for the first switch
 		if (gameData.charAt(0) == 'L') {
 			System.out.println("Left");
