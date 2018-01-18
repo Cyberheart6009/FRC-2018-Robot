@@ -17,8 +17,11 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.buttons.Button;
+import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.buttons.*;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -47,7 +50,7 @@ public class Robot extends IterativeRobot {
 	
 	DigitalInput limitSwitch;
 	
-	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumperButton, rbumperButton;
+	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumperButton, rbumperButton, downJoystick;
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
@@ -68,6 +71,7 @@ public class Robot extends IterativeRobot {
 		operator = new Joystick(0);
 		driver = new Joystick(1);
 		
+		Button downJoystick = new JoystickButton(operator, 1);
 		
 		//These are the motors
 		leftFront = new Spark(0);
@@ -125,7 +129,12 @@ public class Robot extends IterativeRobot {
 		
 	//this makes it so that when the limit switch is pressed, the elevator stops (I think we did this right)
 	while (limitSwitch.get()) {
-		if ()
+		if (downJoystick == true) {
+			elevator.set(-1);
+		}
+		else {
+			elevator.set(0);
+		}
 		}
 	
 	
