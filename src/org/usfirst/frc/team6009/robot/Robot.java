@@ -35,18 +35,25 @@ import edu.wpi.first.wpilibj.Spark;
  * project.
  */
 public class Robot extends IterativeRobot {
+	
+	// Auto Modes Setup
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
 	private String m_autoSelected;
+	
+	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
+	// SpeedController Object creations - Define all names of motors here
 	SpeedController leftFront, leftBack, rightFront, rightBack;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
 	
+	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
 	
+	// Joystick Definitions
 	Joystick driver;
 
 	/**
@@ -55,15 +62,25 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void robotInit() {
+		// Adds all of our previously created auto modes into the smartdashboard chooser
 		m_chooser.addDefault("Default Auto", kDefaultAuto);
 		m_chooser.addObject("My Auto", kCustomAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
 		
+		// Defines all the ports of each of the motors
+		leftFront = new Spark(0);
+		leftBack = new Spark(1);
+		rightFront = new Spark(2);
+		rightBack = new Spark(3);
+		
+		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		
+		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
 		
+		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
 	}
@@ -82,8 +99,6 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousInit() {
 		m_autoSelected = m_chooser.getSelected();
-		// autoSelected = SmartDashboard.getString("Auto Selector",
-		// defaultAuto);
 		System.out.println("Auto selected: " + m_autoSelected);
 	}
 
