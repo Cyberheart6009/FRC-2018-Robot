@@ -2,7 +2,8 @@
 /* Copyright (c) 2017-2018 FIRST. All Rights Reserved.                        */
 /* Open Source Software - may be modified and shared by FRC teams. The code   */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
-/* the project.                                                               */
+/* the project.                                                               */                             
+/*                                Stephen Clark                               */
 /*----------------------------------------------------------------------------*/
 
 package org.usfirst.frc.team6009.robot;
@@ -123,8 +124,12 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 		
 	//this makes it so that when the limit switch is pressed, the elevator stops (I think we did this right)
-	while (limitSwitch.get())
-		elevator.set(0);
+	while (limitSwitch.get()) {
+		if ()
+		}
+	
+	
+		
 	aButton = driver.getRawButton(1);
 	bButton = driver.getRawButton(2);
 	xButton = driver.getRawButton(3);
