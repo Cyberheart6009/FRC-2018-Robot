@@ -45,7 +45,7 @@ public class Robot extends IterativeRobot {
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
@@ -55,6 +55,9 @@ public class Robot extends IterativeRobot {
 	
 	// Joystick Definitions
 	Joystick driver;
+	
+	//Boolean for buttons
+	boolean aButton, bButton;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -67,11 +70,15 @@ public class Robot extends IterativeRobot {
 		m_chooser.addObject("My Auto", kCustomAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
 		
+		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
+		gripper = new Spark(4);
+		
+		driver = new Joystick(0);
 		
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
@@ -123,6 +130,22 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		//leftChassis.set(0.1);
+		//rightChassis.set(0.1);
+		chassis.arcadeDrive(driver.getY(), driver.getX());
+		
+		aButton = driver.getRawButton(1);
+		bButton = driver.getRawButton(2);
+		
+		if (bButton){
+			gripper.set(-0.4);
+		} 
+		else if (aButton) {
+			gripper.set(0.4);
+		} 
+		else {
+			gripper.set(0);
+		}
 	}
 
 	/**
