@@ -27,6 +27,8 @@ import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -43,6 +45,7 @@ public class Robot extends IterativeRobot {
 	private String m_autoSelected;
 	
 	//Variables
+	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	double sensorDistance;
 	
 	// Smartdashboard Chooser object for Auto modes
@@ -65,6 +68,12 @@ public class Robot extends IterativeRobot {
 	
 	// Analog Sensors
 	AnalogInput ultrasonic;
+	
+	// Encoders
+	Encoder leftEncoder, rightEncoder;
+	
+	// Gyro
+	ADXRS450_Gyro gyroscope;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -99,6 +108,14 @@ public class Robot extends IterativeRobot {
 		
 		// Set up port for Ultrasonic Distance Sensor
 		ultrasonic = new AnalogInput(0);
+		
+		// Set up Encoder ports
+		leftEncoder = new Encoder(0,1);
+		rightEncoder = new Encoder(2,3);
+		
+		//Gyroscope Setup
+		gyroscope = new ADXRS450_Gyro();
+		gyroscope.calibrate();
 		
 	}
 
@@ -140,6 +157,8 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		resetEncoders();
+		gyroscope.reset();
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
 		chassis.arcadeDrive(driver.getY(), driver.getX());
@@ -167,7 +186,16 @@ public class Robot extends IterativeRobot {
 	
 	public void disabledPeriodic(){
 		// Calculates distance in centimeters
-		sensorDistance = ((ultrasonic.getAverageVoltage()*1000)/0.977)/10;
-		System.out.println(sensorDistance);
+		//sensorDistance = ((ultrasonic.getAverageVoltage()*1000)/0.977)/10;
+		System.out.println(gyroscope.getAngle());
+	}
+	
+	public void resetEncoders(){
+		leftEncoder.reset();
+		rightEncoder.reset();
+	}
+	
+	public double getDistance(){
+		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
 }
