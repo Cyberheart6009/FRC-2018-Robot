@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.AnalogInput;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -40,6 +41,9 @@ public class Robot extends IterativeRobot {
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
 	private String m_autoSelected;
+	
+	//Variables
+	double sensorDistance;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -58,6 +62,9 @@ public class Robot extends IterativeRobot {
 	
 	//Boolean for buttons
 	boolean aButton, bButton;
+	
+	// Analog Sensors
+	AnalogInput ultrasonic;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -89,6 +96,9 @@ public class Robot extends IterativeRobot {
 		
 		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
+		
+		// Set up port for Ultrasonic Distance Sensor
+		ultrasonic = new AnalogInput(0);
 		
 	}
 
@@ -153,5 +163,11 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void testPeriodic() {
+	}
+	
+	public void disabledPeriodic(){
+		// Calculates distance in centimeters
+		sensorDistance = ((ultrasonic.getAverageVoltage()*1000)/0.977)/10;
+		System.out.println(sensorDistance);
 	}
 }
