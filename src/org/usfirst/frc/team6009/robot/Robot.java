@@ -46,7 +46,6 @@ public class Robot extends IterativeRobot {
 	
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
-	double sensorDistance;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -185,9 +184,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void disabledPeriodic(){
-		// Calculates distance in centimeters
-		//sensorDistance = ((ultrasonic.getAverageVoltage()*1000)/0.977)/10;
-		System.out.println(gyroscope.getAngle());
+		System.out.println(getUltrasonicDistance());
 	}
 	
 	public void resetEncoders(){
@@ -197,5 +194,10 @@ public class Robot extends IterativeRobot {
 	
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
+	}
+	public double getUltrasonicDistance(){
+		// Calculates distance in centimeters from ultrasonic distance sensor
+		return (double)(((ultrasonic.getAverageVoltage()*1000)/0.977)/10);
+		//return (double)(((ultrasonic.getAverageVoltage()*1000)/0.977)/10);
 	}
 }
