@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.Solenoid;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -107,6 +108,8 @@ public class Robot extends IterativeRobot {
 		
 		// Set up port for Ultrasonic Distance Sensor
 		ultrasonic = new AnalogInput(0);
+		Solenoid ultra_solenoid = new Solenoid(0);
+		ultra_solenoid.set(true);
 		
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
@@ -184,7 +187,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void disabledPeriodic(){
-		System.out.println(getUltrasonicDistance());
+		System.out.println(getDistance());
 	}
 	
 	public void resetEncoders(){
@@ -195,9 +198,9 @@ public class Robot extends IterativeRobot {
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
+	
 	public double getUltrasonicDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
 		return (double)(((ultrasonic.getAverageVoltage()*1000)/0.977)/10);
-		//return (double)(((ultrasonic.getAverageVoltage()*1000)/0.977)/10);
 	}
 }
