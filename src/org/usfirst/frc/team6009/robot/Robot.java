@@ -76,6 +76,16 @@ public class Robot extends IterativeRobot {
 	
 	// Gyro
 	ADXRS450_Gyro gyroscope;
+	
+	//PID Variables
+	int Kp = 14;
+	int Ki = 14;
+	double targetPoint;
+	double currentPoint;
+	double Kerr;
+	double Ierr;
+	double Pout;
+	double Iout;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -135,6 +145,19 @@ public class Robot extends IterativeRobot {
 	 * the switch structure below with additional strings. If using the
 	 * SendableChooser make sure to add them to the chooser code above as well.
 	 */
+	
+	public void turnPID() {
+		//Error Calculation for Auto PID
+		Kerr = targetPoint - currentPoint;
+		Ierr = Ierr + Kerr;
+		
+		//Pout Calculation
+		Pout = Kp * Kerr;
+		
+		//Iout Calculation
+		Iout = Ki * Ierr;
+	}
+	
 	@Override
 	public void autonomousInit() {
 		m_autoSelected = m_chooser.getSelected();
@@ -180,10 +203,10 @@ public class Robot extends IterativeRobot {
 			gripper.set(-0.4);
 		} 
 		else if (aButton) {
-			gripper.set(0.4);
+			chassis.tankDrive(0.6, -0.6);
 		} 
 		else {
-			gripper.set(0);
+			//chassis.tankDrive(0.0, 0.0);
 		}
 	}
 
