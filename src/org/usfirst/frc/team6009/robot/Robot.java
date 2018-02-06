@@ -28,6 +28,9 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Timer;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -56,6 +59,8 @@ public class Robot extends IterativeRobot {
 	Ultrasonic ultra = new Ultrasonic(1,1); // creates the ultra object andassigns ultra to be an ultrasonic sensor which uses DigitalOutput 1 for 
     										// the echo pulse and DigitalInput 1 for the trigger pulse
 
+	DigitalInput upperLimitSwitch, lowerLimitSwitch;
+	
 	
 	
 	/**
@@ -77,12 +82,15 @@ public class Robot extends IterativeRobot {
 		
 		driver = new Joystick(0);
 		
-
 		leftServo = new Servo(8);
 		
 		rightServo = new Servo(9);
 		
 		ultra.setAutomaticMode(true); // turns on automatic mode
+		
+		upperLimitSwitch = new DigitalInput(1);
+		
+		lowerLimitSwitch = new DigitalInput(2);
 		
 	}
 
@@ -94,7 +102,7 @@ public class Robot extends IterativeRobot {
 	 * getString line to get the auto name from the text box below the Gyro
 	 *
 	 * <p>You can add additional auto modes by adding additional comparisons to
-	 * the switch structure below with additional strings. If using the
+	 * the switch structure below with additional strings. If using thef
 	 * SendableChooser make sure to add them to the chooser code above as well.
 	 */
 	@Override
@@ -129,6 +137,7 @@ public class Robot extends IterativeRobot {
 		boolean a = driver.getRawButton(0);
 		boolean b = driver.getRawButton(1);
 		
+		
 		if (a) {
 			leftServo.setAngle(180);
 			rightServo.setAngle(180);
@@ -139,12 +148,17 @@ public class Robot extends IterativeRobot {
 			leftServo.setAngle(0);
 			rightServo.setAngle(0);
 		}
+		if (upperLimitSwitch.get()) {
+			if (driver.getRawAxis())
+				
+		}
 	}
 	
 	public void disabledPeriodic() {
 		System.out.println("Distance: " + ultrasonicSample());
 	}
 
+	//hi my name is stephen and i am the coolest person in the entire world
 	/**
 	 * This function is called periodically during test mode.
 	 */
@@ -157,4 +171,17 @@ public class Robot extends IterativeRobot {
     	return range;
     }
 
+    public void updateSmartDashboard() {
+		
+		SmartDashboard.putData("Gyro", gyroscope);
+		SmartDashboard.putNumber("Gyro Angle", gyroscope.getAngle());
+		SmartDashboard.putNumber("Gyro Rate", gyroscope.getRate());
+		SmartDashboard.putNumber("Black Ultrasonic", ultra.getRangeInches());
+		SmartDashboard.putNumber("Yellow Ultrasonic", ultra.getRangeInches());
+
+		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
+		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
+		SmartDashboard.putNumber("Encoder Distance", getDistance());
+	}
+    
 }
