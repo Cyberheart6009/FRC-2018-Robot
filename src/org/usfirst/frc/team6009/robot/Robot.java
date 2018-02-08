@@ -28,9 +28,6 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
-
-import java.sql.Time;
-
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.can.*;
@@ -52,6 +49,8 @@ public class Robot extends IterativeRobot {
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	double currentSpeed;
+	double oldEncoderCounts = 0;
+	long old_time = 0;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -82,15 +81,6 @@ public class Robot extends IterativeRobot {
 	ADXRS450_Gyro gyroscope;
 	
 	//PID Variables			-- WIP
-	int Kp = 14;
-	int Ki = 14;
-	double targetPoint;
-	double currentPoint;
-	double Kerr;
-	double Ierr;
-	double Pout;
-	double Iout;
-
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
@@ -233,27 +223,14 @@ public class Robot extends IterativeRobot {
 	
 	// Calculates the robotSpeed
 	public double robotSpeed() {
-		resetEncoders();
-		long start_time = System.currentTimeMillis();
-		if ((System.currentTimeMillis() - start_time) > 0) {
-			// Calculates current speed of the 
-			currentSpeed = (getDistance()/(System.currentTimeMillis() - start_time)) * 0.0254;
-		}
+		// Calculates current speed of the robot in m/s
+		currentSpeed = ((getDistance() - oldEncoderCounts)/(System.currentTimeMillis() - old_time)) * 0.0254;
+		
+		old_time = System.currentTimeMillis();
+		oldEncoderCounts = getDistance();
 		return (double) currentSpeed;
 	}
-	
-	public void turnPID() {
-		//Error Calculation for Auto PID
-		Kerr = targetPoint - currentPoint;
-		Ierr = Ierr + Kerr;
-		
-		//Pout Calculation
-		Pout = Kp * Kerr;
-		
-		//Iout Calculation
-		Iout = Ki * Ierr;
-	}
-	
+
 
 	// Pushes all data the Smart Dashboard when called
 	private void updateSmartDashboard() {
