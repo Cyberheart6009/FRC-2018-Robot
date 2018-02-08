@@ -147,7 +147,7 @@ public class Robot extends IterativeRobot {
 	
 	//code for the first limit switch (so that the climbing mechanism doesn't go up too high)
 	if (limitSwitchUp.get()) {
-		if (operator.getRawAxis(5) > 0) {
+		if (operator.getRawAxis(5) < 0) {
 			elevator.set(operator.getRawAxis(5));
 		}
 		else {
