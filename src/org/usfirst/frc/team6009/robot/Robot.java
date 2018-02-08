@@ -77,7 +77,7 @@ public class Robot extends IterativeRobot {
 	// Gyro
 	ADXRS450_Gyro gyroscope;
 	
-	//PID Variables
+	//PID Variables			-- WIP
 	int Kp = 14;
 	int Ki = 14;
 	double targetPoint;
@@ -106,6 +106,7 @@ public class Robot extends IterativeRobot {
 		rightBack = new Spark(3);
 		gripper = new Spark(4);
 		
+		// Defines Joystick ports
 		driver = new Joystick(0);
 		
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
@@ -120,9 +121,8 @@ public class Robot extends IterativeRobot {
 		
 		// Set up port for Ultrasonic Distance Sensor
 		ultrasonic_yellow = new AnalogInput(0);
-		ultrasonic_black = new AnalogInput(1);
 		ultra_solenoid = new Solenoid(0);
-		
+		ultrasonic_black = new AnalogInput(1);
 		
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
@@ -132,30 +132,6 @@ public class Robot extends IterativeRobot {
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
 		
-	}
-
-	/**
-	 * This autonomous (along with the chooser code above) shows how to select
-	 * between different autonomous modes using the dashboard. The sendable
-	 * chooser code works with the Java SmartDashboard. If you prefer the
-	 * LabVIEW Dashboard, remove all of the chooser code and uncomment the
-	 * getString line to get the auto name from the text box below the Gyro
-	 *
-	 * <p>You can add additional auto modes by adding additional comparisons to
-	 * the switch structure below with additional strings. If using the
-	 * SendableChooser make sure to add them to the chooser code above as well.
-	 */
-	
-	public void turnPID() {
-		//Error Calculation for Auto PID
-		Kerr = targetPoint - currentPoint;
-		Ierr = Ierr + Kerr;
-		
-		//Pout Calculation
-		Pout = Kp * Kerr;
-		
-		//Iout Calculation
-		Iout = Ki * Ierr;
 	}
 	
 	@Override
@@ -194,10 +170,6 @@ public class Robot extends IterativeRobot {
 		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
-
-		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
-		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
-		
 		
 		if (bButton){
 			gripper.set(-0.4);
@@ -220,27 +192,48 @@ public class Robot extends IterativeRobot {
 	public void disabledPeriodic(){
 	}
 	
+	//--------------------------//
+	//		Custom Functions	//
+	//--------------------------//
+	
+	// Resets encoder values to 0
 	public void resetEncoders(){
 		leftEncoder.reset();
 		rightEncoder.reset();
 	}
 	
+	// Calculates and returns the Robot distance using the encoders attached to each side of the drive train
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
 
+	// Calculates and returns the distance from the Yellow Ultrasonic Distance Sensor
 	public double getUltrasonicYellowDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
 		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
 	}
 
+	// Calculates and returns the distance from the Black Ultrasonic Distance Sensor
 	public double getUltrasonicBlackDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
 		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
 	}
-
-	private void updateSmartDashboard() {
+	
+	public void turnPID() {
+		//Error Calculation for Auto PID
+		Kerr = targetPoint - currentPoint;
+		Ierr = Ierr + Kerr;
 		
+		//Pout Calculation
+		Pout = Kp * Kerr;
+		
+		//Iout Calculation
+		Iout = Ki * Ierr;
+	}
+	
+
+	// Pushes all data the Smart Dashboard when called
+	private void updateSmartDashboard() {
 		SmartDashboard.putData("Gyro", gyroscope);
 		SmartDashboard.putNumber("Gyro Angle", gyroscope.getAngle());
 		SmartDashboard.putNumber("Gyro Rate", gyroscope.getRate());
@@ -248,5 +241,9 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
 		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
 		SmartDashboard.putNumber("Encoder Distance", getDistance());
+		
+		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
+		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
+		
 	}
 }
