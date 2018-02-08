@@ -48,7 +48,8 @@ public class Robot extends IterativeRobot {
 	
 	Joystick operator;
 	
-	DigitalInput limitSwitch;
+	
+	DigitalInput limitSwitchUp, limitSwitchDown, limitSwitchSide;
 	
 	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumperButton, rbumperButton, downJoystick;
 	/**
@@ -81,7 +82,9 @@ public class Robot extends IterativeRobot {
 		climber = new Spark(4);
 		elevator = new Spark(5);
 		gripper = new Spark(6);
-		limitSwitch = new DigitalInput(0);
+		limitSwitchUp = new DigitalInput(0);
+		limitSwitchDown = new DigitalInput(1);
+		limitSwitchSide = new DigitalInput(2);
 		
 	}
 
@@ -127,18 +130,6 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		
-	//this makes it so that when the limit switch is pressed, the elevator stops (I think we did this right)
-	while (limitSwitch.get()) {
-		if (downJoystick == true) {
-			elevator.set(-1);
-		}
-		else {
-			elevator.set(0);
-		}
-		}
-	
-	
-		
 	aButton = driver.getRawButton(1);
 	bButton = driver.getRawButton(2);
 	xButton = driver.getRawButton(3);
@@ -151,6 +142,41 @@ public class Robot extends IterativeRobot {
 	chassis.arcadeDrive((driver.getX()), -(driver.getY()));
 	
 	elevator.set(operator.getRawAxis(5));
+	
+	gripper.set(operator.getRawAxis(4));
+	
+	//code for the first limit switch (so that the climbing mechanism doesn't go up too high)
+	if (limitSwitchUp.get()) {
+		if (operator.getRawAxis(5) > 0) {
+			elevator.set(operator.getRawAxis(5));
+		}
+		else {
+			elevator.set(0);
+		}
+	}
+	
+	//code for the second limit switch (so that the climbing mechanism doesn't go down too low)
+	if (limitSwitchDown.get()) {
+		if (operator.getRawAxis(5) > 0) {
+			elevator.set(operator.getRawAxis(5));
+		}
+		else {
+			elevator.set(0);
+		}
+	}
+	//code for the third limit switch (so that the gripping arms don't extend too widely)
+	if (limitSwitchSide.get()) {
+		if (operator.getRawAxis(4) < 0) {
+			gripper.set(operator.getRawAxis(4));
+		}
+		else {
+			gripper.set(0);
+		}
+	}
+	
+	//I'm not 100% sure if there are only three limit switches and if there are more or less,
+	//so if there are more or less limit switches the same idea is applied
+	//operator.getRawAxis(5) is for up and down joystick movement, while operator.getRawAxis(4) is left and right
 	
 	if (aButton == true) {
 		climber.set(1);
