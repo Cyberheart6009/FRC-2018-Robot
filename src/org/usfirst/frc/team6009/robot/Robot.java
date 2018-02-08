@@ -28,6 +28,9 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
+
+import java.sql.Time;
+
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.can.*;
@@ -48,6 +51,7 @@ public class Robot extends IterativeRobot {
 	
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
+	double currentSpeed;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -180,6 +184,10 @@ public class Robot extends IterativeRobot {
 		else {
 			//chassis.tankDrive(0.0, 0.0);
 		}
+		
+		
+		
+		updateSmartDashboard();
 	}
 
 	/**
@@ -190,7 +198,11 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void disabledPeriodic(){
+		updateSmartDashboard();
 	}
+	
+	
+	
 	
 	//--------------------------//
 	//		Custom Functions	//
@@ -206,7 +218,7 @@ public class Robot extends IterativeRobot {
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
-
+	
 	// Calculates and returns the distance from the Yellow Ultrasonic Distance Sensor
 	public double getUltrasonicYellowDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
@@ -217,6 +229,17 @@ public class Robot extends IterativeRobot {
 	public double getUltrasonicBlackDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
 		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
+	}
+	
+	// Calculates the robotSpeed
+	public double robotSpeed() {
+		resetEncoders();
+		long start_time = System.currentTimeMillis();
+		if ((System.currentTimeMillis() - start_time) > 0) {
+			// Calculates current speed of the 
+			currentSpeed = (getDistance()/(System.currentTimeMillis() - start_time)) * 0.0254;
+		}
+		return (double) currentSpeed;
 	}
 	
 	public void turnPID() {
@@ -244,6 +267,8 @@ public class Robot extends IterativeRobot {
 		
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
+		
+		SmartDashboard.putNumber("Robot Speed", robotSpeed());
 		
 	}
 }
