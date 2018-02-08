@@ -163,18 +163,12 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		ultra_solenoid.set(true);
-		resetEncoders();
-		gyroscope.reset();
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
-
-		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
-		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
-		
 		
 		if (bButton){
 			gripper.set(-0.4);
@@ -185,6 +179,7 @@ public class Robot extends IterativeRobot {
 		else {
 			gripper.set(0);
 		}
+		updateSmartDashboard();
 	}
 
 	/**
@@ -195,6 +190,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void disabledPeriodic(){
+		updateSmartDashboard();
 	}
 	
 	public void resetEncoders(){
