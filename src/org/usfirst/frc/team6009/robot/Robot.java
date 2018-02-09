@@ -32,6 +32,7 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.can.*;
 import edu.wpi.first.wpilibj.SendableBase;
 import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.PIDSource;
 
 /**
@@ -55,10 +56,10 @@ public class Robot extends IterativeRobot {
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis;
+	SpeedControllerGroup leftChassis, rightChassis, negativerightChassis;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
@@ -80,10 +81,10 @@ public class Robot extends IterativeRobot {
 	ADXRS450_Gyro gyroscope;
 	
 	//PID Variables
-	double Kp;
-	double Ki;
-	double Kd;
-	PIDController rotationPID;
+	double Kp = 0.1;
+	double Ki = 0;
+	double Kd = 0;
+	PIDController leftrotationPID, rightrotationPID;
 	
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -103,13 +104,15 @@ public class Robot extends IterativeRobot {
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
 		gripper = new Spark(4);
+		elevator = new Spark(5);
 		
 		driver = new Joystick(0);
 		
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
-		
+		negativerightChassis = new SpeedControllerGroup(rightFront, rightBack);
+		negativerightChassis.setInverted(true);
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
 		
@@ -130,10 +133,10 @@ public class Robot extends IterativeRobot {
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
 		
-		//
 		//PIDSource gyroAngle = gyroscope.pidGet();
-		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, gripper);
-		rotationPID.setEnabled(true);
+		leftrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, gripper);
+		rightrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, elevator);
+		
 		
 	}
 
@@ -177,8 +180,6 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		ultra_solenoid.set(true);
-		resetEncoders();
-		gyroscope.reset();
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
@@ -198,12 +199,17 @@ public class Robot extends IterativeRobot {
 			gripper.set(0.4);
 		} 
 		else {
-			gripper.set(0.4);
+			gripper.set(0);
 		}
 		if(xButton){
-			rotationPID.setSetpoint(50);
+			leftrotationPID.setEnabled(true);
+			rightrotationPID.setEnabled(true);
+			
+			leftrotationPID.setSetpoint(0);
+			rightrotationPID.setSetpoint(0);
 		}
-		System.out.println(rotationPID.get());
+		System.out.println(leftrotationPID.get() +"   " + rightrotationPID.get());
+		updateSmartDashboard();
 	}
 
 	/**
@@ -214,7 +220,8 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void disabledPeriodic(){
-		System.out.println(rotationPID);
+		//System.out.println(rotationPID);
+		updateSmartDashboard();
 	}
 	
 	public void resetEncoders(){
