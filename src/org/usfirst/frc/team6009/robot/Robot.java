@@ -56,7 +56,7 @@ public class Robot extends IterativeRobot {
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator, PIDSpeed;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis, negativerightChassis;
@@ -81,12 +81,13 @@ public class Robot extends IterativeRobot {
 	ADXRS450_Gyro gyroscope;
 	
 	//PID Variables
+	PIDController rotationPID;
 	//double Kp = 0.075;
 	double Kp = 0.075;
 	double Ki = 0;
 	//double Kd = 0.195;
 	double Kd = 0.205;
-	PIDController leftrotationPID, rightrotationPID;
+	
 	
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -135,8 +136,8 @@ public class Robot extends IterativeRobot {
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
 		
-		leftrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, leftChassis);
-		leftrotationPID.setSetpoint(0);
+		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, PIDSpeed);
+		rotationPID.setSetpoint(0);
 		//rightrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, elevator);
 		
 		
@@ -200,15 +201,16 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
-		if(leftrotationPID.isEnabled()){
-			rightChassis.set(-(leftrotationPID.get()));
+		if(rotationPID.isEnabled()){
+			leftChassis.set(-(rotationPID.get()));
+			rightChassis.set(-(rotationPID.get()));
 		}
 		
 		if (bButton){
-			leftrotationPID.setEnabled(false);
+			rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			leftrotationPID.setEnabled(true);
+			rotationPID.setEnabled(true);
 		} 
 		else {
 			gripper.set(0);
@@ -232,7 +234,7 @@ public class Robot extends IterativeRobot {
 			Kd += 0.005;
 		}
 		
-		System.out.println(leftrotationPID.get());
+		System.out.println(rotationPID.get());
 		updateSmartDashboard();
 	}
 
