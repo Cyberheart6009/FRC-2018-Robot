@@ -133,9 +133,8 @@ public class Robot extends IterativeRobot {
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
 		
-		//PIDSource gyroAngle = gyroscope.pidGet();
-		leftrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, gripper);
-		rightrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, elevator);
+		leftrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, leftChassis);
+		//rightrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, elevator);
 		
 		
 	}
@@ -203,10 +202,11 @@ public class Robot extends IterativeRobot {
 		}
 		if(xButton){
 			leftrotationPID.setEnabled(true);
-			rightrotationPID.setEnabled(true);
+			//rightrotationPID.setEnabled(true);
 			
 			leftrotationPID.setSetpoint(0);
-			rightrotationPID.setSetpoint(0);
+			//rightrotationPID.setSetpoint(0);
+			rightChassis.set(-(leftrotationPID.get()));
 		}
 		System.out.println(leftrotationPID.get() +"   " + rightrotationPID.get());
 		updateSmartDashboard();
