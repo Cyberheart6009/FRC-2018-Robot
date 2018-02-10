@@ -81,9 +81,11 @@ public class Robot extends IterativeRobot {
 	ADXRS450_Gyro gyroscope;
 	
 	//PID Variables
+	//double Kp = 0.075;
 	double Kp = 0.075;
 	double Ki = 0;
-	double Kd = 0.15;
+	//double Kd = 0.195;
+	double Kd = 0.205;
 	PIDController leftrotationPID, rightrotationPID;
 	
 	/**
@@ -96,9 +98,7 @@ public class Robot extends IterativeRobot {
 		m_chooser.addDefault("Default Auto", kDefaultAuto);
 		m_chooser.addObject("My Auto", kCustomAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
-		SmartDashboard.putNumber("Kp: Bumpers", Kp);
-		SmartDashboard.putNumber("Ki: StartSelect", Ki);
-		SmartDashboard.putNumber("Kd: JoyPress", Kd);
+
 		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
@@ -136,6 +136,7 @@ public class Robot extends IterativeRobot {
 		gyroscope.calibrate();
 		
 		leftrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, leftChassis);
+		leftrotationPID.setSetpoint(0);
 		//rightrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, elevator);
 		
 		
@@ -199,38 +200,36 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
+		if(leftrotationPID.isEnabled()){
+			rightChassis.set(-(leftrotationPID.get()));
+		}
 		
 		if (bButton){
-			gripper.set(-0.4);
+			leftrotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			gripper.set(0.4);
+			leftrotationPID.setEnabled(true);
 		} 
 		else {
 			gripper.set(0);
 		}
 		if(xButton){
-			leftrotationPID.setEnabled(true);
-			//rightrotationPID.setEnabled(true);
-			
-			leftrotationPID.setSetpoint(0);
-			//rightrotationPID.setSetpoint(0);
-			rightChassis.set(-(leftrotationPID.get()));
+			gyroscope.reset();
 		}
 		if (leftBumper) {
-			Kp -= 0.05;
+			Kp -= 0.005;
 		} else if (rightBumper) {
-			Kp += 0.05;
+			Kp += 0.005;
 		}
 		if (select) {
-			Ki -= 0.05;
+			Ki -= 0.005;
 		} else if (start) {
-			Ki += 0.05;
+			Ki += 0.005;
 		}
 		if (leftThumbPush) {
-			Kd -= 0.05;
+			Kd -= 0.005;
 		} else if (rightThumbPush) {
-			Kd += 0.05;
+			Kd += 0.005;
 		}
 		
 		System.out.println(leftrotationPID.get());
@@ -277,5 +276,9 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
 		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
 		SmartDashboard.putNumber("Encoder Distance", getDistance());
+		
+		SmartDashboard.putNumber("Kp: Bumpers", Kp);
+		SmartDashboard.putNumber("Ki: StartSelect", Ki);
+		SmartDashboard.putNumber("Kd: JoyPress", Kd);
 	}
 }
