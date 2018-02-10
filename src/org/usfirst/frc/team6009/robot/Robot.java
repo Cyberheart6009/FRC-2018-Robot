@@ -2,9 +2,17 @@
 /* Copyright (c) 2017-2018 FIRST. All Rights Reserved.                        */
 /* Open Source Software - may be modified and shared by FRC teams. The code   */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
-/* the project.                                                               */                             
-/*                                Stephen Clark                               */
+/* the project.                                                               */
 /*----------------------------------------------------------------------------*/
+
+
+//|**************************************************************|
+//|				Cyberheart 2018 First Power Up 					 |
+//|																 |
+//|																 |
+//|**************************************************************|
+
+
 
 package org.usfirst.frc.team6009.robot;
 
@@ -12,16 +20,18 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-//New Imports
+// New Imports
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
-import edu.wpi.first.wpilibj.buttons.Button;
-import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.can.*;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.buttons.*;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -30,65 +40,95 @@ import edu.wpi.first.wpilibj.buttons.*;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-			
 public class Robot extends IterativeRobot {
+	
+	// Auto Modes Setup
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
 	private String m_autoSelected;
+	
+	//Variables
+	final static double ENCODER_COUNTS_PER_INCH = 13.49;
+	
+	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
-	SpeedController leftFront, leftBack, rightFront, rightBack, elevator, climber, gripper;
+	//defining limit switches
+	DigitalInput limitSwitchUp, limitSwitchDown, limitSwitchSide;
+	
+	// SpeedController Object creations - Define all names of motors here
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
 	
+	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
 	
-	Joystick driver;
+	// Joystick Definitions
+	Joystick driver, operator;
 	
-	Joystick operator;
+	//Boolean for buttons
+	boolean aButton, bButton;
 	
+	// Analog Sensors
+	AnalogInput ultrasonic_yellow, ultrasonic_black;
+	Solenoid ultra_solenoid;
 	
-	DigitalInput limitSwitchUp, limitSwitchDown, limitSwitchSide;
+	// Encoders
+	Encoder leftEncoder, rightEncoder;
 	
-	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumperButton, rbumperButton, downJoystick;
+	// Gyro
+	ADXRS450_Gyro gyroscope;
+
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
 	 */
 	@Override
 	public void robotInit() {
+		// Adds all of our previously created auto modes into the smartdashboard chooser
 		m_chooser.addDefault("Default Auto", kDefaultAuto);
 		m_chooser.addObject("My Auto", kCustomAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
 		
+		
+		// Defines all the ports of each of the motors
+		leftFront = new Spark(0);
+		leftBack = new Spark(1);
+		rightFront = new Spark(2);
+		rightBack = new Spark(3);
+		gripper = new Spark(4);
+		
+		driver = new Joystick(0);
+		operator = new Joystick(1);
+		
+		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		
+		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
 		
+		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
-		operator = new Joystick(0);
-		driver = new Joystick(1);
+		// Set up port for Ultrasonic Distance Sensor
+		ultrasonic_yellow = new AnalogInput(0);
+		ultrasonic_black = new AnalogInput(1);
+		ultra_solenoid = new Solenoid(0);
 		
-
 		
-		//These are the motors
-		leftFront = new Spark(0);
-		leftBack = new Spark(1);
-		//rightFront = new Spark(2);
-		rightBack = new Spark(3);
-		climber = new Spark(4);
-		elevator = new Spark(2);
-		gripper = new Spark(6);
-		limitSwitchUp = new DigitalInput(4);
-		limitSwitchDown = new DigitalInput(5);
-		limitSwitchSide = new DigitalInput(6);
+		// Set up Encoder ports
+		leftEncoder = new Encoder(0,1);
+		rightEncoder = new Encoder(2,3);
+		
+		//Gyroscope Setup
+		gyroscope = new ADXRS450_Gyro();
+		gyroscope.calibrate();
 		
 	}
 
-	
 	/**
 	 * This autonomous (along with the chooser code above) shows how to select
 	 * between different autonomous modes using the dashboard. The sendable
@@ -103,8 +143,6 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousInit() {
 		m_autoSelected = m_chooser.getSelected();
-		// autoSelected = SmartDashboard.getString("Auto Selector",
-		// defaultAuto);
 		System.out.println("Auto selected: " + m_autoSelected);
 	}
 
@@ -129,78 +167,81 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		ultra_solenoid.set(true);
+		//leftChassis.set(0.1);
+		//rightChassis.set(0.1);
+		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
-	aButton = driver.getRawButton(1);
-	bButton = driver.getRawButton(2);
-	xButton = driver.getRawButton(3);
-	yButton = driver.getRawButton(4);
-	lbumperButton = driver.getRawButton(5);
-	rbumperButton = driver.getRawButton(6);
-	selectButton = driver.getRawButton(7);
-	startButton = driver.getRawButton(8);
-	
-	chassis.arcadeDrive((driver.getX()), -(driver.getY()));
-	
-	elevator.set(operator.getRawAxis(5));
-	
-	gripper.set(operator.getRawAxis(4));
-	
-	//code for the first limit switch (so that the climbing mechanism doesn't go up too high)
-	if (limitSwitchUp.get()) {
-		if (operator.getRawAxis(5) < 0) {
-			elevator.set(operator.getRawAxis(5));
-		}
-		else {
-			elevator.set(0);
-		}
-	}
-	
-	//code for the second limit switch (so that the climbing mechanism doesn't go down too low)
-	if (limitSwitchDown.get()) {
-		if (operator.getRawAxis(5) > 0) {
-			elevator.set(operator.getRawAxis(5));
-		}
-		else {
-			elevator.set(0);
-		}
-	}
-	//code for the third limit switch (so that the gripping arms don't extend too widely)
-	if (limitSwitchSide.get()) {
-		if (operator.getRawAxis(4) < 0) {
-			gripper.set(operator.getRawAxis(4));
-		}
+		aButton = driver.getRawButton(1);
+		bButton = driver.getRawButton(2);
+		
+		if (bButton){
+			gripper.set(-0.4);
+		} 
+		else if (aButton) {
+			gripper.set(0.4);
+		} 
 		else {
 			gripper.set(0);
 		}
+		updateSmartDashboard();
+	
+		
+	//new limit switch code	
+		
+	double output_elevator = operator.getRawAxis(5);
+	if (limitSwitchUp.get()) {
+		output_elevator = Math.min(output_elevator, 0);
+	}
+	else if (limitSwitchDown.get()) {
+		output_elevator = Math.max(output_elevator, 0);
+	}
+	//right is positive, left is negative. we want the gripper to extend with right, retract with left
+	double output_gripper = operator.getRawAxis(4);
+	if (limitSwitchSide.get()) {
+		output_gripper = Math.min(output_gripper, 0);
 	}
 	
-	//I'm not 100% sure if there are only three limit switches and if there are more or less,
-	//so if there are more or less limit switches the same idea is applied
-	//operator.getRawAxis(5) is for up and down joystick movement, while operator.getRawAxis(4) is left and right
-	
-	if (aButton == true) {
-		climber.set(1);
-	}
-	else {
-		climber.set(0);
 	}
 	
-	
-	if (bButton == true) {
-		gripper.set(1);
-	}
-	else if (xButton == true) {
-		gripper.set(-1);
-	}
-	else {
-		gripper.set(0);
-	}
-	}
-
 	/**
 	 * This function is called periodically during test mode.
 	 */
 	@Override
 	public void testPeriodic() {
+	}
+	
+	public void disabledPeriodic(){
+		updateSmartDashboard();
+	}
+	
+	public void resetEncoders(){
+		leftEncoder.reset();
+		rightEncoder.reset();
+	}
+	
+	public double getDistance(){
+		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
+	}
+
+	public double getUltrasonicYellowDistance(){
+		// Calculates distance in centimeters from ultrasonic distance sensor
+		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
+	}
+
+	public double getUltrasonicBlackDistance(){
+		// Calculates distance in centimeters from ultrasonic distance sensor
+		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
+	}
+
+	private void updateSmartDashboard() {
+		
+		SmartDashboard.putData("Gyro", gyroscope);
+		SmartDashboard.putNumber("Gyro Angle", gyroscope.getAngle());
+		SmartDashboard.putNumber("Gyro Rate", gyroscope.getRate());
+
+		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
+		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
+		SmartDashboard.putNumber("Encoder Distance", getDistance());
 	}
 }
