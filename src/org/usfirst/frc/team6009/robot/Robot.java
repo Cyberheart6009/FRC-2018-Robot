@@ -27,6 +27,12 @@ import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDSource;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.PIDOutput;
+import edu.wpi.first.wpilibj.PIDSourceType;
 
 
 /**
@@ -47,9 +53,27 @@ public class Robot extends IterativeRobot {
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
 	
+	PIDController rotationalPID;
+	
+	Encoder leftEncoder, rightEncoder;
+	
 	DifferentialDrive chassis;
 	
 	Joystick driver; 
+	
+	ADXRS450_Gyro gyroscope;
+	
+	double kp = 0.1;
+	double ki = 0.001;
+	double kd = 0.0;
+	double previous_error = 0;
+	double setpoint = driver.getRawAxis(4);
+	double error = setpoint - gyroscope.getAngle()%360.0;
+	double integral = 0 + error;
+	double derivative = error - previous_error;
+	double output = (kp*error) + (ki*integral) + (kd*derivative);
+	
+	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumperButton, rbumperButton;
 	
 
 	/**
@@ -70,6 +94,9 @@ public class Robot extends IterativeRobot {
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
 		
+		leftEncoder = new Encoder(0, 1);
+		rightEncoder = new Encoder(2, 3);
+		
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		
@@ -79,7 +106,16 @@ public class Robot extends IterativeRobot {
 		
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
+		gyroscope = new ADXRS450_Gyro();
+		
+		rotationalPID = new PIDController(kp, ki, kd, gyroscope, leftChassis);
+		
+		
+		
 	}
+	
+	
+
 
 	/**
 	 * This autonomous (along with the chooser code above) shows how to select
@@ -102,20 +138,10 @@ public class Robot extends IterativeRobot {
 		String gameData;
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		
-		if(gameData.charAt(0) == 'L'){
-			
-		}
-		else{
-			
-		}
 		
-		if(gameData.charAt(1) == 'L'){
-			
-		}
-		else{
-			
-		}
+		
 	}
+	
 
 	/**
 	 * This function is called periodically during autonomous.
@@ -138,6 +164,26 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		
+		aButton = driver.getRawButton(1);
+		bButton = driver.getRawButton(2);
+		xButton = driver.getRawButton(3);
+		yButton = driver.getRawButton(4);
+		lbumperButton = driver.getRawButton(5);
+		rbumperButton = driver.getRawButton(6);
+		
+		
+		error = setpoint - gyroscope.getAngle()%360.0;
+		integral = 0 + error;
+		derivative = error - previous_error;
+		output = (kp*error) + (ki*integral) + (kd*derivative);
+		
+		leftBack.set(output);
+		leftFront.set(output);
+		rightBack.set(-output);
+		rightFront.set(-output);
+		
+		
 	}
 
 	/**
