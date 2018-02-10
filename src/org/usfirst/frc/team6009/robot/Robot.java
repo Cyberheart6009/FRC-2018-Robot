@@ -15,9 +15,7 @@
 
 
 package org.usfirst.frc.team6009.robot;
-
-
-import org.spectrum3847.RIOdroid.RIOdroid;
+package org.spectrum3847.RIOdroid;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -159,6 +157,8 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		ultra_solenoid.set(true);
+		resetEncoders();
+		gyroscope.reset();
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
@@ -225,8 +225,7 @@ public class Robot extends IterativeRobot {
 	// Calculates the robotSpeed
 	public double robotSpeed() {
 		// Calculates current speed of the robot in m/s
-		currentSpeed = (Math.abs(getDistance() - oldEncoderCounts)/(System.currentTimeMillis() - old_time));
-		System.out.println(getDistance());
+		currentSpeed = ((getDistance() - oldEncoderCounts)/(System.currentTimeMillis() - old_time)) * 0.0254;
 		
 		old_time = System.currentTimeMillis();
 		oldEncoderCounts = getDistance();
