@@ -68,7 +68,7 @@ public class Robot extends IterativeRobot {
 	Joystick driver;
 	
 	//Boolean for buttons
-	boolean aButton, bButton, yButton, xButton;
+	boolean aButton, bButton, yButton, xButton, leftBumper, rightBumper, start, select, leftThumbPush, rightThumbPush;
 	
 	// Analog Sensors
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
@@ -81,9 +81,9 @@ public class Robot extends IterativeRobot {
 	ADXRS450_Gyro gyroscope;
 	
 	//PID Variables
-	double Kp = 0.1;
+	double Kp = 0.075;
 	double Ki = 0;
-	double Kd = 0;
+	double Kd = 0.15;
 	PIDController leftrotationPID, rightrotationPID;
 	
 	/**
@@ -96,7 +96,9 @@ public class Robot extends IterativeRobot {
 		m_chooser.addDefault("Default Auto", kDefaultAuto);
 		m_chooser.addObject("My Auto", kCustomAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
-		
+		SmartDashboard.putNumber("Kp: Bumpers", Kp);
+		SmartDashboard.putNumber("Ki: StartSelect", Ki);
+		SmartDashboard.putNumber("Kd: JoyPress", Kd);
 		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
@@ -186,7 +188,14 @@ public class Robot extends IterativeRobot {
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
-
+		yButton = driver.getRawButton(4);
+		leftBumper = driver.getRawButton(5);
+		rightBumper = driver.getRawButton(6);
+		select = driver.getRawButton(7);
+		start = driver.getRawButton(8);
+		leftThumbPush = driver.getRawButton(9);
+		rightThumbPush = driver.getRawButton(10);
+		
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
@@ -208,7 +217,23 @@ public class Robot extends IterativeRobot {
 			//rightrotationPID.setSetpoint(0);
 			rightChassis.set(-(leftrotationPID.get()));
 		}
-		System.out.println(leftrotationPID.get() +"   " + rightrotationPID.get());
+		if (leftBumper) {
+			Kp -= 0.05;
+		} else if (rightBumper) {
+			Kp += 0.05;
+		}
+		if (select) {
+			Ki -= 0.05;
+		} else if (start) {
+			Ki += 0.05;
+		}
+		if (leftThumbPush) {
+			Kd -= 0.05;
+		} else if (rightThumbPush) {
+			Kd += 0.05;
+		}
+		
+		System.out.println(leftrotationPID.get());
 		updateSmartDashboard();
 	}
 
