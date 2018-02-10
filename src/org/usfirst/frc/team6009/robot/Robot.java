@@ -67,7 +67,7 @@ public class Robot extends IterativeRobot {
 	double ki = 0.001;
 	double kd = 0.0;
 	double previous_error = 0;
-	double setpoint = driver.getRawAxis(4);
+	double setpoint = 180;
 	double error = setpoint - gyroscope.getAngle()%360.0;
 	double integral = 0 + error;
 	double derivative = error - previous_error;
@@ -172,17 +172,24 @@ public class Robot extends IterativeRobot {
 		lbumperButton = driver.getRawButton(5);
 		rbumperButton = driver.getRawButton(6);
 		
-		
+		if (aButton){
 		error = setpoint - gyroscope.getAngle()%360.0;
 		integral = 0 + error;
 		derivative = error - previous_error;
 		output = (kp*error) + (ki*integral) + (kd*derivative);
 		
+		
 		leftBack.set(output);
 		leftFront.set(output);
 		rightBack.set(-output);
 		rightFront.set(-output);
+		}
+		else {
+			chassis.arcadeDrive((driver.getX()), (driver.getY()));
+		}
 		
+		
+		 
 		
 	}
 
