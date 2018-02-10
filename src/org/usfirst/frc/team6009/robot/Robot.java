@@ -72,19 +72,19 @@ public class Robot extends IterativeRobot {
 		operator = new Joystick(0);
 		driver = new Joystick(1);
 		
-		Button downJoystick = new JoystickButton(operator, 1);
+
 		
 		//These are the motors
 		leftFront = new Spark(0);
 		leftBack = new Spark(1);
-		rightFront = new Spark(2);
+		//rightFront = new Spark(2);
 		rightBack = new Spark(3);
 		climber = new Spark(4);
-		elevator = new Spark(5);
+		elevator = new Spark(2);
 		gripper = new Spark(6);
-		limitSwitchUp = new DigitalInput(0);
-		limitSwitchDown = new DigitalInput(1);
-		limitSwitchSide = new DigitalInput(2);
+		limitSwitchUp = new DigitalInput(4);
+		limitSwitchDown = new DigitalInput(5);
+		limitSwitchSide = new DigitalInput(6);
 		
 	}
 
