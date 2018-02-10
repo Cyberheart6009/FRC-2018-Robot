@@ -57,7 +57,7 @@ public class Robot extends IterativeRobot {
 	DigitalInput limitSwitchUp, limitSwitchDown, limitSwitchSide;
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
@@ -99,6 +99,7 @@ public class Robot extends IterativeRobot {
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
 		gripper = new Spark(4);
+		elevator = new Spark(5);
 		
 		driver = new Joystick(0);
 		operator = new Joystick(1);
@@ -187,20 +188,21 @@ public class Robot extends IterativeRobot {
 		updateSmartDashboard();
 	
 		
-	//new limit switch code	
 		
-	double output_elevator = operator.getRawAxis(5);
-	if (limitSwitchUp.get()) {
-		output_elevator = Math.min(output_elevator, 0);
-	}
-	else if (limitSwitchDown.get()) {
-		output_elevator = Math.max(output_elevator, 0);
-	}
-	//right is positive, left is negative. we want the gripper to extend with right, retract with left
-	double output_gripper = operator.getRawAxis(4);
-	if (limitSwitchSide.get()) {
-		output_gripper = Math.min(output_gripper, 0);
-	}
+		double output_elevator = operator.getY();
+		if (limitSwitchUp.get()) {
+			output_elevator = Math.min(output_elevator, 0);
+		}
+		else if (limitSwitchDown.get()) {
+			output_elevator = Math.max(output_elevator, 0);
+		}
+		elevator.set(output_elevator);
+		//right is positive, left is negative. we want the gripper to extend with right, retract with left
+		double output_gripper = operator.getRawAxis(4);
+		if (limitSwitchSide.get()) {
+			output_gripper = Math.min(output_gripper, 0);
+		gripper.set(output_gripper);
+		} 
 	
 	}
 	
