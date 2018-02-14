@@ -605,24 +605,7 @@ public class StringEscapeUtils {
         return ESCAPE_HTML3.translate(input);
     }
 
-    //-----------------------------------------------------------------------
-    /**
-     * <p>Unescapes a string containing entity escapes to a string
-     * containing the actual Unicode characters corresponding to the
-     * escapes. Supports HTML 4.0 entities.</p>
-     *
-     * <p>For example, the string {@code "&lt;Fran&ccedil;ais&gt;"}
-     * will become {@code "<Français>"}</p>
-     *
-     * <p>If an entity is unrecognized, it is left alone, and inserted
-     * verbatim into the result string. e.g. {@code "&gt;&zzzz;x"} will
-     * become {@code ">&zzzz;x"}.</p>
-     *
-     * @param input  the {@code String} to unescape, may be null
-     * @return a new unescaped {@code String}, {@code null} if null string input
-     * 
-     * @since 3.0
-     */
+ 
     public static final String unescapeHtml4(final String input) {
         return UNESCAPE_HTML4.translate(input);
     }
