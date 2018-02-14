@@ -15,7 +15,8 @@
 
 
 package org.usfirst.frc.team6009.robot;
-package org.spectrum3847.RIOdroid;
+import org.spectrum3847.RIOdroid.RIOdroid;
+
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -52,6 +53,7 @@ public class Robot extends IterativeRobot {
 	double currentSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
+	String box_position = "NO DATA";
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -232,6 +234,10 @@ public class Robot extends IterativeRobot {
 		return (double) currentSpeed;
 	}
 
+	
+	public String androidData(){
+		return box_position;
+	}
 
 	// Pushes all data the Smart Dashboard when called
 	private void updateSmartDashboard() {
