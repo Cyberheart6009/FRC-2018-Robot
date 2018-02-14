@@ -26,7 +26,11 @@ import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
+
+import org.usfirst.frc.team6009.robot.Robot.Step;
+
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.can.*;
@@ -43,23 +47,27 @@ import edu.wpi.first.wpilibj.PIDSource;
  * project.
  */
 public class Robot extends IterativeRobot {
-	
+	String gameData;
 	// Auto Modes Setup
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
-	private String m_autoSelected;
+	final String leftSwitch = "left Switch";
+	String autoSelected;
+	SendableChooser<String> chooser;
 	
+	//auto cases
+	public enum Step { Straight, TurnLeft, TurnRight, Left, Right, Done }
+	public Step autoStep = Step.Straight;
+	public long timerStart;
+
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	
-	// Smartdashboard Chooser object for Auto modes
-	private SendableChooser<String> m_chooser = new SendableChooser<>();
-	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator, PIDSpeed;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis, negativerightChassis;
+	SpeedControllerGroup leftChassis, rightChassis;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
@@ -67,7 +75,7 @@ public class Robot extends IterativeRobot {
 	// Joystick Definitions
 	Joystick driver;
 	
-	//Boolean for buttons
+	// Boolean for buttons
 	boolean aButton, bButton, yButton, xButton, leftBumper, rightBumper, start, select, leftThumbPush, rightThumbPush;
 	
 	// Analog Sensors
@@ -82,12 +90,17 @@ public class Robot extends IterativeRobot {
 	
 	//PID Variables
 	PIDController rotationPID;
+	
+	// CONSTANT VARIABLES FOR PID
 	//double Kp = 0.075;
-	double Kp = 0.075;
+	double Kp = 0.03;
 	double Ki = 0;
 	//double Kd = 0.195;
-	double Kd = 0.205;
+	double Kd = 0.0075;
 	
+	/*double kp = 0.005;
+	double ki = 0.0;
+	double kd = 0.0075;*/
 	
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -96,9 +109,9 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void robotInit() {
 		// Adds all of our previously created auto modes into the smartdashboard chooser
-		m_chooser.addDefault("Default Auto", kDefaultAuto);
-		m_chooser.addObject("My Auto", kCustomAuto);
-		SmartDashboard.putData("Auto choices", m_chooser);
+		chooser = new SendableChooser<String>();
+		chooser.addObject("left Switch", leftSwitch);
+		SmartDashboard.putData("Auto choices", chooser);
 
 		
 		// Defines all the ports of each of the motors
@@ -114,8 +127,6 @@ public class Robot extends IterativeRobot {
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
-		negativerightChassis = new SpeedControllerGroup(rightFront, rightBack);
-		negativerightChassis.setInverted(true);
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
 		
@@ -136,9 +147,8 @@ public class Robot extends IterativeRobot {
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
 		
-		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, PIDSpeed);
+		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, gripper);
 		rotationPID.setSetpoint(0);
-		//rightrotationPID = new PIDController(Kp, Ki, Kd, gyroscope, elevator);
 		
 		
 	}
@@ -157,8 +167,10 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void autonomousInit() {
-		m_autoSelected = m_chooser.getSelected();
-		System.out.println("Auto selected: " + m_autoSelected);
+		autoSelected = (String) chooser.getSelected();
+		System.out.println("Auto selected: " + autoSelected);
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
 	}
 
 	/**
@@ -166,14 +178,54 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		switch (m_autoSelected) {
-			case kCustomAuto:
+		double distance = getDistance();
+		if(gameData.charAt(0) == 'L'){
+		if (autoSelected.equalsIgnoreCase(leftSwitch)) {
+// for LL or LR
+			switch (autoStep) {
+			case Straight:
+				driveStraight(0, 0.4);
+				
+				if (distance > 100){
+					stop();
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.TurnLeft;
+				}
 				// Put custom auto code here
 				break;
-			case kDefaultAuto:
-			default:
-				// Put default auto code here
+			case TurnLeft:
+				autoStep = Step.TurnRight;
 				break;
+			case TurnRight:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(90);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Left;
+				break;
+			case Left:
+				autoStep = Step.Right;
+				break;
+			case Right:
+				driveStraight(90, 0.4);
+				
+				autoStep = Step.Done;
+				break;
+			case Done:
+				leftChassis.set(0);
+				rightChassis.set(0);
+				break;
+			}
+			//default:
+				// Put default auto code here
+				//break;
+			}
+		}
+		else if(gameData.charAt(0) == 'R'){
+			
 		}
 	}
 
@@ -202,8 +254,8 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
 		if(rotationPID.isEnabled()){
-			leftChassis.set(-(rotationPID.get()));
 			rightChassis.set(-(rotationPID.get()));
+			leftChassis.set((rotationPID.get()));
 		}
 		
 		if (bButton){
@@ -211,12 +263,18 @@ public class Robot extends IterativeRobot {
 		} 
 		else if (aButton) {
 			rotationPID.setEnabled(true);
-		} 
-		else {
-			gripper.set(0);
+			/*rightChassis.set(-(rotationPID.get()));
+			leftChassis.set((rotationPID.get()));*/
 		}
 		if(xButton){
 			gyroscope.reset();
+			resetEncoders();
+		}
+		if(yButton){
+			driveStraight(0, 0.4);
+			//chassis.tankDrive(0.5, -0.5);
+			//rotationPID.setEnabled(false);
+			//System.out.println("yButton");
 		}
 		if (leftBumper) {
 			Kp -= 0.005;
@@ -234,7 +292,7 @@ public class Robot extends IterativeRobot {
 			Kd += 0.005;
 		}
 		
-		System.out.println(rotationPID.get());
+		//System.out.println(rotationPID.get());
 		updateSmartDashboard();
 	}
 
@@ -248,6 +306,15 @@ public class Robot extends IterativeRobot {
 	public void disabledPeriodic(){
 		//System.out.println(rotationPID);
 		updateSmartDashboard();
+	}
+	
+	public void PIDDriveStraight() {
+		rotationPID.setEnabled(true);
+		rotationPID.setSetpoint(0);
+		chassis.tankDrive(((0.5)+(rotationPID.get())), (-(0.5)+(rotationPID.get())));
+		//rightChassis.set((0.5)+(rotationPID.get()));
+		//leftChassis.set((0.5)-(rotationPID.get()));
+		System.out.println("Yes");
 	}
 	
 	public void resetEncoders(){
@@ -282,5 +349,52 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Kp: Bumpers", Kp);
 		SmartDashboard.putNumber("Ki: StartSelect", Ki);
 		SmartDashboard.putNumber("Kd: JoyPress", Kd);
+	}
+	
+	// This is the function that allows the robot to drive straight no matter what
+	// It automatically corrects itself and stays locked onto the set angle
+	private void driveStraight(double heading, double speed) {
+		// get the current heading and calculate a heading error
+		double currentAngle = gyroscope.getAngle()%360.0;
+		System.out.println("driveStraight");
+		double error = heading - currentAngle;
+		//rotationPID.setEnabled(true);
+		//rotationPID.setSetpoint(0);
+		// calculate the speed for the motors
+		double leftSpeed = speed;
+		double rightSpeed = speed;
+
+		// FIXME: This code can make the robot turn very 
+		//        quickly if it is not pointed close to the
+		//        correct direction.  I bet this is the 
+		//        problem you are experiencing.
+		//        I think if you correct the state machine
+		//        if statements above, you will be able to 
+		//        control the turning speed.
+		
+		// adjust the motor speed based on the compass error
+		if (error < 0) {
+			// turn left
+			// slow down the left motors
+			leftSpeed += error * Kp;
+		}
+		else {
+			// turn right
+			// Slow down right motors
+			rightSpeed -= error * Kp;
+		}
+	
+		// set the motors based on the inputted speed
+		leftChassis.set(leftSpeed);
+		rightChassis.set(rightSpeed);
+	}
+	private void stop(){
+		leftBack.set(0);
+		leftFront.set(0);
+		rightBack.set(0);
+		rightFront.set(0);
+	}
+	public void driveStraighter() {
+		
 	}
 }
