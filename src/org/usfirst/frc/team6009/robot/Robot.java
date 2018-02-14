@@ -167,7 +167,7 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void autonomousInit() {
-		autoSelected = (String) chooser.getSelected();
+		autoSelected = (String)chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
