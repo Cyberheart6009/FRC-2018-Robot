@@ -98,8 +98,12 @@ public class Robot extends IterativeRobot {
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
-		gripper = new Spark(4);
-		elevator = new Spark(5);
+		gripper = new Spark(5);
+		elevator = new Spark(4);
+		
+		limitSwitchUp = new DigitalInput(4);
+		limitSwitchDown = new DigitalInput(5);
+		limitSwitchSide = new DigitalInput(6);
 		
 		driver = new Joystick(0);
 		operator = new Joystick(1);
@@ -187,9 +191,9 @@ public class Robot extends IterativeRobot {
 		}
 		updateSmartDashboard();
 	
+		elevator.set(driver.getRawAxis(5));
 		
-		
-		if (limitSwitchUp.get()) {
+	    if (!limitSwitchUp.get()) {
 			if (driver.getRawAxis(5) < 0) {
 				elevator.set(0);
 			}
@@ -198,7 +202,7 @@ public class Robot extends IterativeRobot {
 			}
 		}
 		
-		if (limitSwitchDown.get()) {
+		if (!limitSwitchDown.get()) {
 			if (driver.getRawAxis(5) > 0) {
 				elevator.set(0);
 			}
@@ -208,8 +212,8 @@ public class Robot extends IterativeRobot {
 			}
 		}
 		
-	/*	if (limitSwitchSide.get()) {
-			if (driver.getRawAxis(4) > 0) {
+		if (!limitSwitchSide.get()) {
+			if (driver.getRawAxis(4) < 0) {
 				gripper.set(0);
 			}
 			
@@ -218,7 +222,15 @@ public class Robot extends IterativeRobot {
 			}
 		}
 		
-	*/
+	
+		
+		if (!limitSwitchUp.get()) {
+			System.out.println("Up Activated");
+		}
+		if (!limitSwitchDown.get()) {
+			System.out.println("down activated");
+		}
+		
 	}
 	
 	/**
