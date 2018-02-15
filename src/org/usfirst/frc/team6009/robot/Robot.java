@@ -34,7 +34,8 @@ import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Solenoid;
-import com.kauailabs.navx.frc.*;
+import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.SPI;
 
 
 /**
@@ -57,7 +58,7 @@ public class Robot extends IterativeRobot {
 	SendableChooser<String> chooser;
 	
 	//auto cases
-		public enum Step { Straight, TurnLeft, TurnRight, Left, Right, Done }
+		public enum Step { Straight, Turn, DriveForward, Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
 
@@ -72,6 +73,8 @@ public class Robot extends IterativeRobot {
 	
 	Joystick driver; 
 	
+	//gyroscope
+	AHRS gyro;
 	ADXRS450_Gyro gyroscope;
 	
 	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumper, rbumper, start, select, leftThumbPush, rightThumbPush;
@@ -124,6 +127,7 @@ public class Robot extends IterativeRobot {
 		
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
+		gyro = new AHRS(SPI.Port.kMXP);
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
 		
@@ -133,7 +137,9 @@ public class Robot extends IterativeRobot {
 		ultra_solenoid = new Solenoid(0);
 
 		
-		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, gripper);
+		rotationPID = new PIDController(Kp, Ki, Kd, gyro, gripper);
+		rotationPID.setInputRange(-180.0f,  180.0f);
+	    rotationPID.setOutputRange(-1.0, 1.0);
 		rotationPID.setSetpoint(0);
 		
 		
@@ -178,15 +184,13 @@ public class Robot extends IterativeRobot {
 				
 				if (distance > 100){
 					stop();
-					timerStart = System.currentTimeMillis();
-					autoStep = Step.TurnLeft;
 				}
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.Turn;
+				
 				// Put custom auto code here
 				break;
-			case TurnLeft:
-				autoStep = Step.TurnRight;
-				break;
-			case TurnRight:
+			case Turn:
 				rotationPID.setEnabled(true);
 				rotationPID.setSetpoint(90);
 				leftChassis.set(rotationPID.get());
@@ -194,14 +198,16 @@ public class Robot extends IterativeRobot {
 				rotationPID.setEnabled(false);
 				
 				timerStart = System.currentTimeMillis();
-				autoStep = Step.Left;
+				autoStep = Step.DriveForward;
 				break;
-			case Left:
-				autoStep = Step.Right;
-				break;
-			case Right:
+			case DriveForward:
 				driveStraight(90, 0.4);
 				
+				if (distance > 50){
+					stop();
+				}
+				
+				timerStart = System.currentTimeMillis();
 				autoStep = Step.Done;
 				break;
 			case Done:
@@ -257,7 +263,7 @@ public class Robot extends IterativeRobot {
 			leftChassis.set((rotationPID.get()));*/
 		}
 		if(xButton){
-			gyroscope.reset();
+			gyro.reset();
 			resetEncoders();
 		}
 		if(yButton){
@@ -318,9 +324,9 @@ public class Robot extends IterativeRobot {
 	}
     private void updateSmartDashboard() {
 		
-		SmartDashboard.putData("Gyro", gyroscope);
-		SmartDashboard.putNumber("Gyro Angle", gyroscope.getAngle());
-		SmartDashboard.putNumber("Gyro Rate", gyroscope.getRate());
+		SmartDashboard.putData("Gyro", gyro);
+		SmartDashboard.putNumber("Gyro Angle", gyro.getAngle());
+		SmartDashboard.putNumber("Gyro Rate", gyro.getRate());
 
 		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
 		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
@@ -335,7 +341,7 @@ public class Robot extends IterativeRobot {
 	// It automatically corrects itself and stays locked onto the set angle
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
-		double currentAngle = gyroscope.getAngle()%360.0;
+		double currentAngle = gyro.getAngle()%360.0;
 		System.out.println("driveStraight");
 		double error = heading - currentAngle;
 		//rotationPID.setEnabled(true);
