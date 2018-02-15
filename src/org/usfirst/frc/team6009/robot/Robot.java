@@ -52,7 +52,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
 	final String leftSwitch = "left Switch";
-	String autoSelected;
+	String positionSelected;
 	SendableChooser<String> chooser;
 	
 	//auto cases
@@ -165,8 +165,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	@Override
 	public void autonomousInit() {
-		autoSelected = (String)chooser.getSelected();
-		System.out.println("Auto selected: " + autoSelected);
+		positionSelected = (String)chooser.getSelected();
+		System.out.println("Auto selected: " + positionSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
 	}
@@ -178,7 +178,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void autonomousPeriodic() {
 		double distance = getDistance();
 		if(gameData.charAt(0) == 'L'){
-			if (autoSelected.equalsIgnoreCase(leftSwitch)) {
+			if (positionSelected.equalsIgnoreCase(leftSwitch)) {
 				// for LL or LR
 				switch (autoStep) {
 				case Straight:
@@ -260,9 +260,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			rotationPID.setEnabled(true);
-			/*rightChassis.set(-(rotationPID.get()));
-			leftChassis.set((rotationPID.get()));*/
+			squareDrive();
 		}
 		if(xButton){
 			gyroscope.reset();
