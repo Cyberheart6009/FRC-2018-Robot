@@ -46,7 +46,7 @@ import edu.wpi.first.wpilibj.PIDSource;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-public class Robot extends IterativeRobot {
+public class Robot extends IterativeRobot implements PIDOutput {
 	String gameData;
 	// Auto Modes Setup
 	private static final String kDefaultAuto = "Default";
@@ -147,9 +147,7 @@ public class Robot extends IterativeRobot {
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
 		
-		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, gripper);
-		rotationPID.setSetpoint(0);
-		
+		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, this);
 		
 	}
 
@@ -180,50 +178,50 @@ public class Robot extends IterativeRobot {
 	public void autonomousPeriodic() {
 		double distance = getDistance();
 		if(gameData.charAt(0) == 'L'){
-		if (autoSelected.equalsIgnoreCase(leftSwitch)) {
-// for LL or LR
-			switch (autoStep) {
-			case Straight:
-				driveStraight(0, 0.4);
-				
-				if (distance > 100){
-					stop();
+			if (autoSelected.equalsIgnoreCase(leftSwitch)) {
+				// for LL or LR
+				switch (autoStep) {
+				case Straight:
+					driveStraight(0, 0.4);
+					
+					if (distance > 100){
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.TurnLeft;
+					}
+					// Put custom auto code here
+					break;
+				case TurnLeft:
+					autoStep = Step.TurnRight;
+					break;
+				case TurnRight:
+					rotationPID.setEnabled(true);
+					rotationPID.setSetpoint(90);
+					leftChassis.set(rotationPID.get());
+					rightChassis.set(-rotationPID.get());
+					rotationPID.setEnabled(false);
+					
 					timerStart = System.currentTimeMillis();
-					autoStep = Step.TurnLeft;
+					autoStep = Step.Left;
+					break;
+				case Left:
+					autoStep = Step.Right;
+					break;
+				case Right:
+					driveStraight(90, 0.4);
+					
+					autoStep = Step.Done;
+					break;
+				case Done:
+					leftChassis.set(0);
+					rightChassis.set(0);
+					break;
 				}
-				// Put custom auto code here
-				break;
-			case TurnLeft:
-				autoStep = Step.TurnRight;
-				break;
-			case TurnRight:
-				rotationPID.setEnabled(true);
-				rotationPID.setSetpoint(90);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				rotationPID.setEnabled(false);
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Left;
-				break;
-			case Left:
-				autoStep = Step.Right;
-				break;
-			case Right:
-				driveStraight(90, 0.4);
-				
-				autoStep = Step.Done;
-				break;
-			case Done:
-				leftChassis.set(0);
-				rightChassis.set(0);
-				break;
+				//default:
+					// Put default auto code here
+					//break;
+				}
 			}
-			//default:
-				// Put default auto code here
-				//break;
-			}
-		}
 		else if(gameData.charAt(0) == 'R'){
 			
 		}
@@ -317,6 +315,44 @@ public class Robot extends IterativeRobot {
 		System.out.println("Yes");
 	}
 	
+	public void turnInPlace(double setPoint) {
+		rotationPID.setSetpoint(setPoint);
+		if (gyroscope.getAngle() != setPoint) {
+			rotationPID.setEnabled(true);
+			rightChassis.set(-(rotationPID.get()));
+			leftChassis.set((rotationPID.get()));
+		} else {
+			rotationPID.setEnabled(false);
+		}
+	}
+	
+	public void driveDistanceStraight(double distance, double speed) {
+		driveStraight(0, speed);
+		double currentDistance = getDistance();
+		if (currentDistance > distance){
+			return;
+		}
+	}
+	
+	public void squareDrive() {
+		int squareStep = 0;
+		int side = 0;
+		switch (squareStep){
+		case 0:
+			driveDistanceStraight(12, 0.4);
+			squareStep = 1;
+			side += 1;
+			if (side == 4) {return;}
+			break;
+		case 1:
+			turnInPlace(90);
+			squareStep = 0;
+			break;
+		default:
+			System.out.println("The squareDrive() function could not find a valid squareStep int");
+		}
+	}
+	
 	public void resetEncoders(){
 		leftEncoder.reset();
 		rightEncoder.reset();
@@ -394,7 +430,10 @@ public class Robot extends IterativeRobot {
 		rightBack.set(0);
 		rightFront.set(0);
 	}
-	public void driveStraighter() {
+
+	@Override
+	public void pidWrite(double output) {
+		// TODO Auto-generated method stub
 		
 	}
 }
