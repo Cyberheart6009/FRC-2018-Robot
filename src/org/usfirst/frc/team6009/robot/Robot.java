@@ -32,7 +32,9 @@ import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDSource;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.PIDOutput;
-import edu.wpi.first.wpilibj.PIDSourceType;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.Solenoid;
+import com.kauailabs.navx.frc.*;
 
 
 /**
@@ -43,17 +45,26 @@ import edu.wpi.first.wpilibj.PIDSourceType;
  * project.
  */
 public class Robot extends IterativeRobot {
+	// Constant defining encoder turns per inch of robot travel
+	final static double ENCODER_COUNTS_PER_INCH = 13.49;
+	
+	// Auto Modes Setup
+	String gameData;
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
-	private String m_autoSelected;
-	private SendableChooser<String> chooser = new SendableChooser<>();
+    final String leftSwitch = "left Switch";
+	String autoSelected;
+	SendableChooser<String> chooser;
 	
-	SpeedController leftFront, leftBack, rightFront, rightBack;
+	//auto cases
+		public enum Step { Straight, TurnLeft, TurnRight, Left, Right, Done }
+		public Step autoStep = Step.Straight;
+		public long timerStart;
+
+    SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator, PIDSpeed;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
-	
-	PIDController rotationalPID;
 	
 	Encoder leftEncoder, rightEncoder;
 	
@@ -63,17 +74,21 @@ public class Robot extends IterativeRobot {
 	
 	ADXRS450_Gyro gyroscope;
 	
-	double kp = 0.1;
-	double ki = 0.001;
-	double kd = 0.0;
-	double previous_error = 0;
-	double setpoint = 180;
-	double error = setpoint - gyroscope.getAngle()%360.0;
-	double integral = 0 + error;
-	double derivative = error - previous_error;
-	double output = (kp*error) + (ki*integral) + (kd*derivative);
+	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumper, rbumper, start, select, leftThumbPush, rightThumbPush;
 	
-	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumperButton, rbumperButton;
+	// Analog Sensors
+		AnalogInput ultrasonic_yellow, ultrasonic_black;
+		Solenoid ultra_solenoid;
+		
+		//PID Variables
+		PIDController rotationPID;
+		
+		// CONSTANT VARIABLES FOR PID
+		//double Kp = 0.075;
+		double Kp = 0.03;
+		double Ki = 0;
+		//double Kd = 0.195;
+		double Kd = 0.0075;
 	
 
 	/**
@@ -82,12 +97,15 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void robotInit() {
+		// Adds all of our previously created auto modes into the smartdashboard chooser
 		chooser.addDefault("Default Auto", kDefaultAuto);
 		chooser.addObject("My Auto", kCustomAuto);
 		
+		chooser = new SendableChooser<String>();
+		chooser.addObject("left Switch", leftSwitch);
 		SmartDashboard.putData("Auto choices", chooser);
-		SmartDashboard.putData("gameData", chooser);
-		
+
+
 		leftFront = new Spark(0);
 		leftBack = new Spark(1);
 		
@@ -107,8 +125,16 @@ public class Robot extends IterativeRobot {
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
 		gyroscope = new ADXRS450_Gyro();
+		gyroscope.calibrate();
 		
-		rotationalPID = new PIDController(kp, ki, kd, gyroscope, leftChassis);
+		// Set up port for Ultrasonic Distance Sensor
+		ultrasonic_yellow = new AnalogInput(0);
+		ultrasonic_black = new AnalogInput(1);
+		ultra_solenoid = new Solenoid(0);
+
+		
+		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, gripper);
+		rotationPID.setSetpoint(0);
 		
 		
 		
@@ -130,16 +156,10 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousInit() {
-		m_autoSelected = chooser.getSelected();
-		// autoSelected = SmartDashboard.getString("Auto Selector",
-		// defaultAuto);
-		System.out.println("Auto selected: " + m_autoSelected);
-		
-		String gameData;
+		autoSelected = (String)chooser.getSelected();
+		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		
-		
-		
+		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
 	}
 	
 
@@ -148,14 +168,54 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		switch (m_autoSelected) {
-			case kCustomAuto:
+		double distance = getDistance();
+		if(gameData.charAt(0) == 'L'){
+		if (autoSelected.equalsIgnoreCase(leftSwitch)) {
+// for LL or LR
+			switch (autoStep) {
+			case Straight:
+				driveStraight(0, 0.4);
+				
+				if (distance > 100){
+					stop();
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.TurnLeft;
+				}
 				// Put custom auto code here
 				break;
-			case kDefaultAuto:
-			default:
-				// Put default auto code here
+			case TurnLeft:
+				autoStep = Step.TurnRight;
 				break;
+			case TurnRight:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(90);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Left;
+				break;
+			case Left:
+				autoStep = Step.Right;
+				break;
+			case Right:
+				driveStraight(90, 0.4);
+				
+				autoStep = Step.Done;
+				break;
+			case Done:
+				leftChassis.set(0);
+				rightChassis.set(0);
+				break;
+			}
+			//default:
+				// Put default auto code here
+				//break;
+			}
+		}
+		else if(gameData.charAt(0) == 'R'){
+			
 		}
 	}
 
@@ -164,31 +224,66 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		ultra_solenoid.set(true);
+		
+		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
 		yButton = driver.getRawButton(4);
-		lbumperButton = driver.getRawButton(5);
-		rbumperButton = driver.getRawButton(6);
+		lbumper = driver.getRawButton(5);
+		rbumper = driver.getRawButton(6);
+		select = driver.getRawButton(7);
+		start = driver.getRawButton(8);
+		leftThumbPush = driver.getRawButton(9);
+		rightThumbPush = driver.getRawButton(10);
 		
-		if (aButton){
-		error = setpoint - gyroscope.getAngle()%360.0;
-		integral = 0 + error;
-		derivative = error - previous_error;
-		output = (kp*error) + (ki*integral) + (kd*derivative);
+		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
+		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
 		
-		leftBack.set(output);
-		leftFront.set(output);
-		rightBack.set(-output);
-		rightFront.set(-output);
-		}
-		else {
-			chassis.arcadeDrive((driver.getX()), (driver.getY()));
+		if(rotationPID.isEnabled()){
+			rightChassis.set(-(rotationPID.get()));
+			leftChassis.set((rotationPID.get()));
 		}
 		
+		if (bButton){
+			rotationPID.setEnabled(false);
+		} 
+		else if (aButton) {
+			rotationPID.setEnabled(true);
+			/*rightChassis.set(-(rotationPID.get()));
+			leftChassis.set((rotationPID.get()));*/
+		}
+		if(xButton){
+			gyroscope.reset();
+			resetEncoders();
+		}
+		if(yButton){
+			driveStraight(0, 0.4);
+			//chassis.tankDrive(0.5, -0.5);
+			//rotationPID.setEnabled(false);
+			//System.out.println("yButton");
+		}
+		if (lbumper) {
+			Kp -= 0.005;
+		} else if (rbumper) {
+			Kp += 0.005;
+		}
+		if (select) {
+			Ki -= 0.005;
+		} else if (start) {
+			Ki += 0.005;
+		}
+		if (leftThumbPush) {
+			Kd -= 0.005;
+		} else if (rightThumbPush) {
+			Kd += 0.005;
+		}
 		
+		//System.out.println(rotationPID.get());
+		updateSmartDashboard();
 		 
 		
 	}
@@ -198,5 +293,85 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void testPeriodic() {
+	}
+	public void disabledPeriodic(){
+		//System.out.println(rotationPID);
+		updateSmartDashboard();
+	}
+	public void resetEncoders(){
+		leftEncoder.reset();
+		rightEncoder.reset();
+	}
+	
+	public double getDistance(){
+		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
+	}
+
+	public double getUltrasonicYellowDistance(){
+		// Calculates distance in centimeters from ultrasonic distance sensor
+		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
+	}
+
+	public double getUltrasonicBlackDistance(){
+		// Calculates distance in centimeters from ultrasonic distance sensor
+		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
+	}
+    private void updateSmartDashboard() {
+		
+		SmartDashboard.putData("Gyro", gyroscope);
+		SmartDashboard.putNumber("Gyro Angle", gyroscope.getAngle());
+		SmartDashboard.putNumber("Gyro Rate", gyroscope.getRate());
+
+		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
+		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
+		SmartDashboard.putNumber("Encoder Distance", getDistance());
+		
+		SmartDashboard.putNumber("Kp: Bumpers", Kp);
+		SmartDashboard.putNumber("Ki: StartSelect", Ki);
+		SmartDashboard.putNumber("Kd: JoyPress", Kd);
+	}
+	
+	// This is the function that allows the robot to drive straight no matter what
+	// It automatically corrects itself and stays locked onto the set angle
+	private void driveStraight(double heading, double speed) {
+		// get the current heading and calculate a heading error
+		double currentAngle = gyroscope.getAngle()%360.0;
+		System.out.println("driveStraight");
+		double error = heading - currentAngle;
+		//rotationPID.setEnabled(true);
+		//rotationPID.setSetpoint(0);
+		// calculate the speed for the motors
+		double leftSpeed = speed;
+		double rightSpeed = speed;
+
+		// FIXME: This code can make the robot turn very 
+		//        quickly if it is not pointed close to the
+		//        correct direction.  I bet this is the 
+		//        problem you are experiencing.
+		//        I think if you correct the state machine
+		//        if statements above, you will be able to 
+		//        control the turning speed.
+		
+		// adjust the motor speed based on the compass error
+		if (error < 0) {
+			// turn left
+			// slow down the left motors
+			leftSpeed += error * Kp;
+		}
+		else {
+			// turn right
+			// Slow down right motors
+			rightSpeed -= error * Kp;
+		}
+	
+		// set the motors based on the inputted speed
+		leftChassis.set(leftSpeed);
+		rightChassis.set(rightSpeed);
+	}
+	private void stop(){
+		leftBack.set(0);
+		leftFront.set(0);
+		rightBack.set(0);
+		rightFront.set(0);
 	}
 }
