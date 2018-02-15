@@ -45,7 +45,9 @@ import edu.wpi.first.wpilibj.SPI;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-public class Robot extends IterativeRobot {
+public class Robot extends IterativeRobot implements PIDOutput {
+	
+	double rotateToAngleRate;
 	// Constant defining encoder turns per inch of robot travel
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	
@@ -137,7 +139,7 @@ public class Robot extends IterativeRobot {
 		ultra_solenoid = new Solenoid(0);
 
 		
-		rotationPID = new PIDController(Kp, Ki, Kd, gyro, gripper);
+		rotationPID = new PIDController(Kp, Ki, Kd, gyro, this);
 		rotationPID.setInputRange(-180.0f,  180.0f);
 	    rotationPID.setOutputRange(-1.0, 1.0);
 		rotationPID.setSetpoint(0);
@@ -248,17 +250,23 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
+		boolean rotateToAngle = false;
 		
-		if(rotationPID.isEnabled()){
+		/*if(rotationPID.isEnabled()){
 			rightChassis.set(-(rotationPID.get()));
 			leftChassis.set((rotationPID.get()));
-		}
+		}*/
 		
 		if (bButton){
-			rotationPID.setEnabled(false);
+			rotateToAngle = true;
+			rotationPID.setSetpoint(0);
+					
+			//rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			rotationPID.setEnabled(true);
+			rotateToAngle = true;
+			rotationPID.setSetpoint(180);
+			//rotationPID.setEnabled(true);
 			/*rightChassis.set(-(rotationPID.get()));
 			leftChassis.set((rotationPID.get()));*/
 		}
@@ -287,6 +295,17 @@ public class Robot extends IterativeRobot {
 		} else if (rightThumbPush) {
 			Kd += 0.005;
 		}
+		
+		
+        if ( rotateToAngle ) {
+            rotationPID.enable();
+            rightChassis.set(-(rotationPID.get()));
+			leftChassis.set((rotationPID.get()));
+            
+        } else {
+            rotationPID.disable();
+            
+        }
 		
 		//System.out.println(rotationPID.get());
 		updateSmartDashboard();
@@ -380,4 +399,11 @@ public class Robot extends IterativeRobot {
 		rightBack.set(0);
 		rightFront.set(0);
 	}
+	@Override
+	  /* This function is invoked periodically by the PID Controller, */
+	  /* based upon navX-MXP yaw angle input and PID Coefficients.    */
+	  public void pidWrite(double output) {
+	      rotateToAngleRate = output;
+	  }
+	
 }
