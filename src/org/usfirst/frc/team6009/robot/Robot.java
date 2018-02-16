@@ -314,6 +314,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	}
 	
 	public void turnInPlace(double setPoint) {
+		gyroscope.reset();
 		rotationPID.setSetpoint(setPoint);
 		rotationPID.setEnabled(true);
 		rightChassis.set(-(rotationPID.get()));
