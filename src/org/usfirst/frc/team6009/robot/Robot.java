@@ -56,11 +56,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
     final String leftSwitch = "left Switch";
+    final String square = "square";
 	String autoSelected;
 	SendableChooser<String> chooser;
 	
 	//auto cases
-		public enum Step { Straight, Turn, DriveForward, Done }
+		public enum Step { Straight, Turn, Straight2, Turn2, Straight3, Turn3, Straight4, Turn4,  Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
 
@@ -108,6 +109,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		
 		chooser = new SendableChooser<String>();
 		chooser.addObject("left Switch", leftSwitch);
+		chooser.addObject("square", square);
 		SmartDashboard.putData("Auto choices", chooser);
 
 
@@ -177,6 +179,86 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void autonomousPeriodic() {
 		double distance = getDistance();
+		if (autoSelected.equalsIgnoreCase(square)) {
+		switch (autoStep) {
+		case Straight:
+			driveStraight(0, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn;
+			break;
+		case Turn:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(90);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Straight2;
+			break;
+		case Straight2:
+			driveStraight(90, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn2;
+			break;
+		case Turn2:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(180);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Straight3;
+			break;
+		case Straight3:
+			driveStraight(180, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn3;
+			break;
+		case Turn3:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(270);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Straight4;
+			break;
+		case Straight4:
+			driveStraight(270, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn4;
+			break;
+		case Turn4:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(0);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Done;
+			break;
+		case Done:
+			leftChassis.set(0);
+			rightChassis.set(0);
+			break;
+		}
+		}
 		if(gameData.charAt(0) == 'L'){
 		if (autoSelected.equalsIgnoreCase(leftSwitch)) {
 // for LL or LR
@@ -200,9 +282,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				rotationPID.setEnabled(false);
 				
 				timerStart = System.currentTimeMillis();
-				autoStep = Step.DriveForward;
+				autoStep = Step.Straight2;
 				break;
-			case DriveForward:
+			case Straight2:
 				driveStraight(90, 0.4);
 				
 				if (distance > 50){
