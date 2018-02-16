@@ -200,6 +200,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			autoStep = Step.Straight2;
 			break;
 		case Straight2:
+			resetEncoders();
 			driveStraight(90, 0.3);
 			if (distance > 10) {
 				stop();
@@ -218,6 +219,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			autoStep = Step.Straight3;
 			break;
 		case Straight3:
+			resetEncoders();
 			driveStraight(180, 0.3);
 			if (distance > 10) {
 				stop();
@@ -236,6 +238,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			autoStep = Step.Straight4;
 			break;
 		case Straight4:
+			resetEncoders();
 			driveStraight(270, 0.3);
 			if (distance > 10) {
 				stop();
