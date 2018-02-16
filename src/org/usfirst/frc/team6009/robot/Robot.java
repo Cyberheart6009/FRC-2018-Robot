@@ -52,11 +52,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
 	final String leftSwitch = "left Switch";
+	final String square = "square";
 	String positionSelected;
 	SendableChooser<String> chooser;
 	
 	//auto cases
-	public enum Step { Straight, TurnLeft, TurnRight, Left, Right, Done }
+	public enum Step { Straight, Done, Turn, Turn1, Turn2, Turn3, Turn4, Straight2, Straight3, Straight4 }
 	public Step autoStep = Step.Straight;
 	public long timerStart;
 
@@ -111,6 +112,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		// Adds all of our previously created auto modes into the smartdashboard chooser
 		chooser = new SendableChooser<String>();
 		chooser.addObject("left Switch", leftSwitch);
+		chooser.addObject("Square", square);
 		SmartDashboard.putData("Auto choices", chooser);
 
 		
@@ -168,7 +170,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		positionSelected = (String)chooser.getSelected();
 		System.out.println("Auto selected: " + positionSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
+		gyroscope.reset();
+		//Reset the gyro so the heading at the start of the match is 0
 	}
 
 	/**
@@ -177,7 +180,88 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void autonomousPeriodic() {
 		double distance = getDistance();
-		if(gameData.charAt(0) == 'L'){
+		if (positionSelected.equalsIgnoreCase(square)) {
+			switch (autoStep) {
+			case Straight:
+				
+				driveStraight(0, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn;
+				break;
+			case Turn:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(90);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight2;
+				break;
+			case Straight2:
+				driveStraight(90, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn2;
+				break;
+			case Turn2:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(180);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight3;
+				break;
+			case Straight3:
+				driveStraight(180, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn3;
+				break;
+			case Turn3:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(270);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight4;
+				break;
+			case Straight4:
+				driveStraight(270, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn4;
+				break;
+			case Turn4:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(0);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Done;
+				break;
+			case Done:
+				leftChassis.set(0);
+				rightChassis.set(0);
+				break;
+			}
+		}
+		/*if(gameData.charAt(0) == 'L'){
 			if (positionSelected.equalsIgnoreCase(leftSwitch)) {
 				// for LL or LR
 				switch (autoStep) {
@@ -224,7 +308,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			}
 		else if(gameData.charAt(0) == 'R'){
 			
-		}
+		}*/
 	}
 
 	/**
@@ -260,17 +344,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			squareDrive();
+			turnInPlace(90);
 		}
 		if(xButton){
 			gyroscope.reset();
 			resetEncoders();
 		}
 		if(yButton){
-			driveStraight(0, 0.4);
-			//chassis.tankDrive(0.5, -0.5);
-			//rotationPID.setEnabled(false);
-			//System.out.println("yButton");
+			driveDistanceStraight(10, 0.4);
 		}
 		if (leftBumper) {
 			Kp -= 0.005;
