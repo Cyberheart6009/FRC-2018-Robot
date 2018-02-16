@@ -184,7 +184,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				case Straight:
 					driveStraight(0, 0.4);
 					
-					if (distance > 100){
+					if (distance > 10){
 						stop();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.TurnLeft;
@@ -315,19 +315,18 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	public void turnInPlace(double setPoint) {
 		rotationPID.setSetpoint(setPoint);
-		if (gyroscope.getAngle() != setPoint) {
-			rotationPID.setEnabled(true);
-			rightChassis.set(-(rotationPID.get()));
-			leftChassis.set((rotationPID.get()));
-		} else {
-			rotationPID.setEnabled(false);
-		}
+		rotationPID.setEnabled(true);
+		rightChassis.set(-(rotationPID.get()));
+		leftChassis.set((rotationPID.get()));
 	}
 	
 	public void driveDistanceStraight(double distance, double speed) {
-		driveStraight(0, speed);
 		double currentDistance = getDistance();
+		driveStraight(0, 0.4);
 		if (currentDistance > distance){
+			System.out.println("current distance end");
+			stop();
+			resetEncoders();
 			return;
 		}
 	}
@@ -337,10 +336,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		int side = 0;
 		switch (squareStep){
 		case 0:
-			driveDistanceStraight(12, 0.4);
+			rotationPID.setEnabled(false);
+			driveDistanceStraight(10, 0.4);
 			squareStep = 1;
 			side += 1;
-			if (side == 4) {return;}
+			//if (side == 4) {return;}
 			break;
 		case 1:
 			turnInPlace(90);
