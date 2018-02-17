@@ -139,9 +139,12 @@ public class Robot extends IterativeRobot {
 		Timer.delay(1);
 		
 		System.out.println("Begin ADB Tests");
-		System.out.println("Kill ADB" + RIOdroid.executeCommand("adb kill-server"));
+		//System.out.println("Kill ADB" + RIOdroid.executeCommand("adb kill-server"));
 		System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
-		System.out.println("ADB DEVICES: " + RIOdroid.executeCommand("adb devices"));
+		//System.out.println("ADB DEVICES: " + RIOdroid.executeCommand("adb devices"));
+		//RIOdroid.executeCommand("adb logcat -t 1");
+		System.out.println("WORKED");
+		//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150"));
 		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S"));
 		System.out.println("logcat done");
 	}
