@@ -57,10 +57,10 @@ public class Robot extends IterativeRobot {
 	DigitalInput limitSwitchUp, limitSwitchDown, limitSwitchSide;
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator;
+	SpeedController leftFront, leftBack, rightFront, rightBack, climberOne, climberTwo, elevatorOne, elevatorTwo;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis;
+	SpeedControllerGroup leftChassis, rightChassis, climberGroup, elevatorGroup;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
@@ -98,15 +98,24 @@ public class Robot extends IterativeRobot {
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
-		gripper = new Spark(5);
-		elevator = new Spark(4);
 		
+		climberOne = new Spark(4);
+		climberTwo = new Spark(5);
+
+		elevatorOne = new Spark(6);
+		elevatorTwo = new Spark(7);
+				
 		limitSwitchUp = new DigitalInput(4);
 		limitSwitchDown = new DigitalInput(5);
 		limitSwitchSide = new DigitalInput(6);
 		
 		driver = new Joystick(0);
 		operator = new Joystick(1);
+		
+		
+		
+		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
+		elevatorGroup = new SpeedControllerGroup(elevatorOne, elevatorTwo);
 		
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
@@ -131,6 +140,8 @@ public class Robot extends IterativeRobot {
 		//Gyroscope Setup
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
+		
+		
 		
 	}
 
@@ -189,31 +200,33 @@ public class Robot extends IterativeRobot {
 		else {
 			gripper.set(0);
 		}*/
+
 		updateSmartDashboard();
 	
-		elevator.set(driver.getRawAxis(5));
-		gripper.set(driver.getRawAxis(5));
+		elevatorGroup.set(driver.getRawAxis(5));
+		climberGroup.set(driver.getRawAxis(5));
+		climberOne.setInverted(true);
 		
 	    if (!limitSwitchUp.get()) {
 			if (driver.getRawAxis(5) < 0) {
-				elevator.set(0);
-				gripper.set(0);
+				elevatorGroup.set(0);
+				climberGroup.set(0);
 			}
 			else {
-				elevator.set(driver.getRawAxis(5));
-				gripper.set(driver.getRawAxis(5));
+				elevatorGroup.set(driver.getRawAxis(5));
+				climberGroup.set(driver.getRawAxis(5));
 			}
 		}
 		
 		if (!limitSwitchDown.get()) {
 			if (driver.getRawAxis(5) > 0) {
-				elevator.set(0);
-				gripper.set(0);
+				elevatorGroup.set(0);
+				climberGroup.set(0);
 			}
 			
 			else {
-				elevator.set(driver.getRawAxis(5));
-				gripper.set(driver.getRawAxis(5));
+				elevatorGroup.set(driver.getRawAxis(5));
+				climberGroup.set(driver.getRawAxis(5));
 			}
 		}
 		/*
