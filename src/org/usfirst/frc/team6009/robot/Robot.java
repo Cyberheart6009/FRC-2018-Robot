@@ -15,6 +15,7 @@
 
 
 package org.usfirst.frc.team6009.robot;
+import org.spectrum3847.RIOdroid.RIOadb;
 import org.spectrum3847.RIOdroid.RIOdroid;
 
 
@@ -32,6 +33,7 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.can.*;
 
 /**
@@ -132,9 +134,16 @@ public class Robot extends IterativeRobot {
 		// Initialize ADB Communication 
 		System.out.println("Initializing adb");
 		RIOdroid.init();
+		RIOadb.init();
 		System.out.println("adb Initialized");
-		System.out.println(RIOdroid.executeCommand("adb logcat"));
+		Timer.delay(1);
 		
+		System.out.println("Begin ADB Tests");
+		System.out.println("Kill ADB" + RIOdroid.executeCommand("adb kill-server"));
+		System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
+		System.out.println("ADB DEVICES: " + RIOdroid.executeCommand("adb devices"));
+		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S"));
+		System.out.println("logcat done");
 	}
 	
 	@Override
