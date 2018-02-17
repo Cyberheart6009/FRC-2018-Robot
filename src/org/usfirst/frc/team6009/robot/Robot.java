@@ -16,7 +16,7 @@
 
 package org.usfirst.frc.team6009.robot;
 import org.spectrum3847.RIOdroid.RIOdroid;
-
+import org.usfirst.frc.team6009.robot.Robot.Step;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -46,6 +46,7 @@ public class Robot extends IterativeRobot {
 	// Auto Modes Setup
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
+	private static final String SquareAuto = "Square";
 	private String m_autoSelected;
 	
 	//Variables
@@ -83,7 +84,14 @@ public class Robot extends IterativeRobot {
 	// Gyro
 	ADXRS450_Gyro gyroscope;
 	
-	//PID Variables			-- WIP
+	// PID Variables -WIP
+	double kP = 0.03;
+	
+	//Auto variables
+	public enum Step {STRAIGHT, TURN};
+	public Step autoStep = Step.STRAIGHT;
+	
+	
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
@@ -93,6 +101,7 @@ public class Robot extends IterativeRobot {
 		// Adds all of our previously created auto modes into the smartdashboard chooser
 		m_chooser.addDefault("Default Auto", kDefaultAuto);
 		m_chooser.addObject("My Auto", kCustomAuto);
+		m_chooser.addObject("Square Mode", SquareAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
 		
 		
@@ -130,10 +139,11 @@ public class Robot extends IterativeRobot {
 		gyroscope.calibrate();
 	
 		// Initialize ADB Communication 
+		/*
 		System.out.println("Initializing adb");
 		RIOdroid.init();
 		System.out.println("adb Initialized");
-		System.out.println(RIOdroid.executeCommand("adb logcat"));
+		System.out.println(RIOdroid.executeCommand("adb logcat"));*/
 		
 	}
 	
@@ -149,6 +159,29 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 		switch (m_autoSelected) {
+			case SquareAuto:
+				switch(autoStep){
+					case STRAIGHT:
+						if (getDistance() < 10){
+							driveStraight(0, 0.3);
+						}
+						else{
+							stop();
+							resetEncoders();
+							autoStep = Step.TURN;
+						}
+						
+						break;
+					case TURN:
+						if(turnRight(90)){
+							stop();
+							resetEncoders();
+							gyroscope.reset();
+							autoStep = Step.STRAIGHT;
+						}
+						break;
+				}
+				break;
 			case kCustomAuto:
 				// Put custom auto code here
 				break;
@@ -244,6 +277,57 @@ public class Robot extends IterativeRobot {
 	public String androidData(){
 		box_position = RIOdroid.executeCommand("logcat");
 		return box_position;
+	}
+	
+	private void driveStraight(double heading, double speed) {
+		// get the current heading and calculate a heading error
+		double currentAngle = gyroscope.getAngle()%360.0;
+		//System.out.println("driveStraight");
+		double error = heading - currentAngle;
+		// calculate the speed for the motors
+		double leftSpeed = speed;
+		double rightSpeed = speed;
+		
+		// adjust the motor speed based on the compass error
+		if (error < 0) {
+			// turn left
+			// slow down the left motors
+			leftSpeed += error * kP;
+		}
+		else {
+			// turn right
+			// Slow down right motors
+			rightSpeed -= error * kP;
+		}
+	
+		// set the motors based on the inputted speed
+		leftBack.set(leftSpeed);
+		leftFront.set(leftSpeed);
+		rightBack.set(rightSpeed);
+		rightFront.set(rightSpeed);
+	}
+	
+	private void stop(){
+		leftBack.set(0);
+		leftFront.set(0);
+		rightBack.set(0);
+		rightFront.set(0);
+	}
+	
+	//slow motor speeds while turning
+	
+	private boolean turnRight(double targetAngle){
+		// We want to turn in place to 60 degrees 
+		leftBack.set(0.35);
+		leftFront.set(0.35);
+		rightBack.set(-0.35);
+		rightFront.set(-0.35);
+
+		double currentAngle = gyroscope.getAngle();
+		if (currentAngle >= targetAngle - 10){
+			return true;
+		}
+		return false;
 	}
 
 	// Pushes all data the Smart Dashboard when called
