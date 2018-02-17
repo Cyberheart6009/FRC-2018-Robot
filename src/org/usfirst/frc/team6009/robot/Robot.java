@@ -49,12 +49,20 @@ import edu.wpi.first.wpilibj.PIDSource;
 public class Robot extends IterativeRobot implements PIDOutput {
 	String gameData;
 	// Auto Modes Setup
-	private static final String kDefaultAuto = "Default";
-	private static final String kCustomAuto = "My Auto";
-	final String leftSwitch = "left Switch";
-	final String square = "square";
+	// Create Position Chooser and its Choices
+	SendableChooser<String> positionChooser;
+	private static final String left = "left";
+	private static final String center = "center";
+	private static final String right = "right";
+	private static final String square = "square";
+	// Creating Movement Chooser and its choices
+	SendableChooser<String> movementChooser;
+	private static final String switchSwitch = "switchSwitch";
+	private static final String switchScale = "switchScale";
+	private static final String scaleSwitch = "scaleSwitch";
+	private static final String scaleScale = "scaleScale";
 	String positionSelected;
-	SendableChooser<String> chooser;
+	String movementSelected;
 	
 	//auto cases
 	public enum Step { Straight, Done, Turn, Turn1, Turn2, Turn3, Turn4, Straight2, Straight3, Straight4 }
@@ -103,17 +111,31 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	double ki = 0.0;
 	double kd = 0.0075;*/
 	
+	//Square movement variables
+	int squareStep;
+	int side;
+	
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
 	 */
 	@Override
 	public void robotInit() {
-		// Adds all of our previously created auto modes into the smartdashboard chooser
-		chooser = new SendableChooser<String>();
-		chooser.addObject("left Switch", leftSwitch);
-		chooser.addObject("Square", square);
-		SmartDashboard.putData("Auto choices", chooser);
+		// Create Position Types
+		positionChooser = new SendableChooser<String>();
+		positionChooser.addObject("Left", left);
+		positionChooser.addObject("Center", center);
+		positionChooser.addObject("Right", right);
+		positionChooser.addObject("Square", square);
+		// Create Movement Types
+		movementChooser = new SendableChooser<String>();
+		movementChooser.addObject("Switch 2x", switchSwitch);
+		movementChooser.addObject("Switch then Scale", switchScale);
+		movementChooser.addObject("Scale then Switch", scaleSwitch);
+		movementChooser.addObject("Scale 2x", scaleScale);
+		//Display these choices in whatever interface we are using
+		SmartDashboard.putData("Robot Position", positionChooser);
+		SmartDashboard.putData("Movement Type", movementChooser);
 
 		
 		// Defines all the ports of each of the motors
@@ -167,11 +189,15 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	@Override
 	public void autonomousInit() {
-		positionSelected = (String)chooser.getSelected();
-		System.out.println("Auto selected: " + positionSelected);
+		//Assign selected modes to a variable
+		positionSelected = (String)positionChooser.getSelected();
+		movementSelected = (String)movementChooser.getSelected();
+		System.out.println("Position Selected: " + positionSelected);
+		System.out.println("Movement Selected" + movementSelected);
+		//Get Orientation of scale and store it in gameData
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		gyroscope.reset();
 		//Reset the gyro so the heading at the start of the match is 0
+		gyroscope.reset();
 	}
 
 	/**
@@ -179,136 +205,39 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		double distance = getDistance();
-		if (positionSelected.equalsIgnoreCase(square)) {
-			switch (autoStep) {
-			case Straight:
-				
-				driveStraight(0, 0.3);
-				if (distance > 10) {
-					stop();
+		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
+		if (positionSelected == "left" || positionSelected == "right") {
+			//These are combined under 1 if section because they both start with switch
+			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
+				if (gameData.charAt(0) == 'L') {
+					// TODO Insert Code to move the Robot to the left side of the switch and drop a box into it
+					if (movementSelected == "switchSwitch") {
+						// TODO Insert Code to pick up box and plant it in switch
+					}
+					if (movementSelected == "switchScale" && gameData.charAt(1) == 'L') {
+						// TODO Insert Code to pick up box and move to the left side of the scale
+					}
+					if (movementSelected == "switchScale" && gameData.charAt(1) == 'R') {
+						// TODO Insert Code to pick up box and move to the right side of the scale
+					}
 				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn;
-				break;
-			case Turn:
-				rotationPID.setEnabled(true);
-				rotationPID.setSetpoint(90);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				rotationPID.setEnabled(false);
+			}
+			//These are combined under 1 if section because they both start with scale
+			if (movementSelected == "ScaleScale" || movementSelected == "ScaleSwitch") {
 				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight2;
-				break;
-			case Straight2:
-				driveStraight(90, 0.3);
-				if (distance > 10) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn2;
-				break;
-			case Turn2:
-				rotationPID.setEnabled(true);
-				rotationPID.setSetpoint(180);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				rotationPID.setEnabled(false);
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight3;
-				break;
-			case Straight3:
-				driveStraight(180, 0.3);
-				if (distance > 10) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn3;
-				break;
-			case Turn3:
-				rotationPID.setEnabled(true);
-				rotationPID.setSetpoint(270);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				rotationPID.setEnabled(false);
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight4;
-				break;
-			case Straight4:
-				driveStraight(270, 0.3);
-				if (distance > 10) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn4;
-				break;
-			case Turn4:
-				rotationPID.setEnabled(true);
-				rotationPID.setSetpoint(0);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				rotationPID.setEnabled(false);
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Done;
-				break;
-			case Done:
-				leftChassis.set(0);
-				rightChassis.set(0);
-				break;
 			}
 		}
-		/*if(gameData.charAt(0) == 'L'){
-			if (positionSelected.equalsIgnoreCase(leftSwitch)) {
-				// for LL or LR
-				switch (autoStep) {
-				case Straight:
-					driveStraight(0, 0.4);
-					
-					if (distance > 10){
-						stop();
-						timerStart = System.currentTimeMillis();
-						autoStep = Step.TurnLeft;
-					}
-					// Put custom auto code here
-					break;
-				case TurnLeft:
-					autoStep = Step.TurnRight;
-					break;
-				case TurnRight:
-					rotationPID.setEnabled(true);
-					rotationPID.setSetpoint(90);
-					leftChassis.set(rotationPID.get());
-					rightChassis.set(-rotationPID.get());
-					rotationPID.setEnabled(false);
-					
-					timerStart = System.currentTimeMillis();
-					autoStep = Step.Left;
-					break;
-				case Left:
-					autoStep = Step.Right;
-					break;
-				case Right:
-					driveStraight(90, 0.4);
-					
-					autoStep = Step.Done;
-					break;
-				case Done:
-					leftChassis.set(0);
-					rightChassis.set(0);
-					break;
-				}
-				//default:
-					// Put default auto code here
-					//break;
-				}
+		//This code is activated if the robot is in the center
+		if (positionSelected == "center") {
+			//These are combined under 1 if section because they both start with switch
+			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
+				
 			}
-		else if(gameData.charAt(0) == 'R'){
-			
-		}*/
+			//These are combined under 1 if section because they both start with scale
+			if (movementSelected == "ScaleScale" || movementSelected == "ScaleSwitch") {
+				
+			}
+		}
 	}
 
 	/**
@@ -405,6 +334,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void driveDistanceStraight(double distance, double speed) {
 		double currentDistance = getDistance();
 		driveStraight(0, 0.4);
+		System.out.println("driveDistanceStraight()");
 		if (currentDistance > distance){
 			System.out.println("current distance end");
 			stop();
@@ -414,8 +344,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	}
 	
 	public void squareDrive() {
-		int squareStep = 0;
-		int side = 0;
 		switch (squareStep){
 		case 0:
 			rotationPID.setEnabled(false);
@@ -517,3 +445,138 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		
 	}
 }
+
+
+//Legacy Autonomous & Katerinas Square Auto
+/**public void autonomousPeriodic() {
+	double distance = getDistance();
+	if (positionSelected.equalsIgnoreCase(square)) {
+		switch (autoStep) {
+		case Straight:
+			
+			driveStraight(0, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn;
+			break;
+		case Turn:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(90);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Straight2;
+			break;
+		case Straight2:
+			driveStraight(90, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn2;
+			break;
+		case Turn2:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(180);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Straight3;
+			break;
+		case Straight3:
+			driveStraight(180, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn3;
+			break;
+		case Turn3:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(270);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Straight4;
+			break;
+		case Straight4:
+			driveStraight(270, 0.3);
+			if (distance > 10) {
+				stop();
+			}
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Turn4;
+			break;
+		case Turn4:
+			rotationPID.setEnabled(true);
+			rotationPID.setSetpoint(0);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(false);
+			
+			timerStart = System.currentTimeMillis();
+			autoStep = Step.Done;
+			break;
+		case Done:
+			leftChassis.set(0);
+			rightChassis.set(0);
+			break;
+		}
+	}
+	if(gameData.charAt(0) == 'L'){
+		if (positionSelected.equalsIgnoreCase(leftSwitch)) {
+			// for LL or LR
+			switch (autoStep) {
+			case Straight:
+				driveStraight(0, 0.4);
+				
+				if (distance > 10){
+					stop();
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.TurnLeft;
+				}
+				// Put custom auto code here
+				break;
+			case TurnLeft:
+				autoStep = Step.TurnRight;
+				break;
+			case TurnRight:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(90);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Left;
+				break;
+			case Left:
+				autoStep = Step.Right;
+				break;
+			case Right:
+				driveStraight(90, 0.4);
+				
+				autoStep = Step.Done;
+				break;
+			case Done:
+				leftChassis.set(0);
+				rightChassis.set(0);
+				break;
+			}
+			//default:
+				// Put default auto code here
+				//break;
+			}
+		}
+	else if(gameData.charAt(0) == 'R'){
+		
+	}
+}*/
