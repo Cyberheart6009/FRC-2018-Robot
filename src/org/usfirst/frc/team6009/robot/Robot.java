@@ -167,25 +167,30 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		if (autoSelected.equalsIgnoreCase(square)) {
 		switch (autoStep) {
 		case Straight:
+			rotationPID.setEnabled(false);
 			gyroscope.reset();
 			resetEncoders();
+			
 			driveStraight(0, 0.3);
+			
 			if (distance > 10) {
 				stop();
 			}
+			
 			timerStart = System.currentTimeMillis();
 			autoStep = Step.Turn;
 			break;
+			
 		case Turn:
 			rotationPID.setEnabled(true);
 			rotationPID.setSetpoint(90);
 			leftChassis.set(rotationPID.get());
 			rightChassis.set(-rotationPID.get());
-			rotationPID.setEnabled(false);
 			
 			timerStart = System.currentTimeMillis();
 			autoStep = Step.Straight;
 			break;
+			
 		case Done:
 			leftChassis.set(0.0);
 			rightChassis.set(0.0);
