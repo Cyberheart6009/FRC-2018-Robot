@@ -45,9 +45,9 @@ import edu.wpi.first.wpilibj.SPI;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-public class Robot extends IterativeRobot {
+public class Robot extends IterativeRobot implements PIDOutput {
 	
-	//double rotateToAngleRate;
+	double rotateToAngleRate;
 	
 	// Constant defining encoder turns per inch of robot travel
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
@@ -62,7 +62,7 @@ public class Robot extends IterativeRobot {
 	SendableChooser<String> chooser;
 	
 	//auto cases
-		public enum Step { Straight, Turn, Straight2, Turn2, Straight3, Turn3, Straight4, Turn4,  Done }
+		public enum Step { Straight, Turn,  Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
 
@@ -78,15 +78,10 @@ public class Robot extends IterativeRobot {
 	Joystick driver; 
 	
 	//gyroscope
-	AHRS gyro;
-	//ADXRS450_Gyro gyroscope;
+	AHRS gyroscope;
 	
 	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumper, rbumper, start, select, leftThumbPush, rightThumbPush;
 	
-	// Analog Sensors
-		AnalogInput ultrasonic_yellow, ultrasonic_black;
-		Solenoid ultra_solenoid;
-		
 		//PID Variables
 		PIDController rotationPID;
 		
@@ -132,22 +127,11 @@ public class Robot extends IterativeRobot {
 		
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
-		gyro = new AHRS(SPI.Port.kMXP);
-		//gyroscope = new ADXRS450_Gyro();
-		//gyroscope.calibrate();
+		gyroscope = new AHRS(SPI.Port.kMXP);
 		
-		// Set up port for Ultrasonic Distance Sensor
-		ultrasonic_yellow = new AnalogInput(0);
-		ultrasonic_black = new AnalogInput(1);
-		ultra_solenoid = new Solenoid(0);
-
 		
-		rotationPID = new PIDController(Kp, Ki, Kd, gyro, gripper);
-		//rotationPID.setInputRange(-180.0f,  180.0f);
-	    //rotationPID.setOutputRange(-1.0, 1.0);
+		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, this);
 		rotationPID.setSetpoint(0);
-		
-		
 		
 	}
 	
@@ -170,7 +154,7 @@ public class Robot extends IterativeRobot {
 		autoSelected = (String)chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		gyro.reset();  // Reset the gyro so the heading at the start of the match is 0
+		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
 	}
 	
 
@@ -183,6 +167,7 @@ public class Robot extends IterativeRobot {
 		if (autoSelected.equalsIgnoreCase(square)) {
 		switch (autoStep) {
 		case Straight:
+			gyroscope.reset();
 			resetEncoders();
 			driveStraight(0, 0.3);
 			if (distance > 10) {
@@ -199,119 +184,15 @@ public class Robot extends IterativeRobot {
 			rotationPID.setEnabled(false);
 			
 			timerStart = System.currentTimeMillis();
-			autoStep = Step.Straight2;
-			break;
-		case Straight2:
-			resetEncoders();
-			driveStraight(90, 0.3);
-			if (distance > 10) {
-				stop();
-			}
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Turn2;
-			break;
-		case Turn2:
-			rotationPID.setEnabled(true);
-			rotationPID.setSetpoint(180);
-			leftChassis.set(rotationPID.get());
-			rightChassis.set(-rotationPID.get());
-			rotationPID.setEnabled(false);
-			
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Straight3;
-			break;
-		case Straight3:
-			resetEncoders();
-			driveStraight(180, 0.3);
-			if (distance > 10) {
-				stop();
-			}
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Turn3;
-			break;
-		case Turn3:
-			rotationPID.setEnabled(true);
-			rotationPID.setSetpoint(270);
-			leftChassis.set(rotationPID.get());
-			rightChassis.set(-rotationPID.get());
-			rotationPID.setEnabled(false);
-			
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Straight4;
-			break;
-		case Straight4:
-			resetEncoders();
-			driveStraight(270, 0.3);
-			if (distance > 10) {
-				stop();
-			}
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Turn4;
-			break;
-		case Turn4:
-			rotationPID.setEnabled(true);
-			rotationPID.setSetpoint(0);
-			leftChassis.set(rotationPID.get());
-			rightChassis.set(-rotationPID.get());
-			rotationPID.setEnabled(false);
-			
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Done;
+			autoStep = Step.Straight;
 			break;
 		case Done:
-			leftChassis.set(0);
-			rightChassis.set(0);
+			leftChassis.set(0.0);
+			rightChassis.set(0.0);
 			break;
 		}
 		}
-		if(gameData.charAt(0) == 'L'){
-		if (autoSelected.equalsIgnoreCase(leftSwitch)) {
-// for LL or LR
-			switch (autoStep) {
-			case Straight:
-				driveStraight(0, 0.4);
-				
-				if (distance > 100){
-					stop();
-				}
-					timerStart = System.currentTimeMillis();
-					autoStep = Step.Turn;
-				
-				// Put custom auto code here
-				break;
-			case Turn:
-				rotationPID.setEnabled(true);
-				rotationPID.setSetpoint(90);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				rotationPID.setEnabled(false);
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight2;
-				break;
-			case Straight2:
-				driveStraight(90, 0.4);
-				
-				if (distance > 50){
-					stop();
-				}
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Done;
-				break;
-			case Done:
-				leftChassis.set(0);
-				rightChassis.set(0);
-				break;
-			}
-			//default:
-				// Put default auto code here
-				//break;
-			}
-		}
-		else if(gameData.charAt(0) == 'R'){
-			
-		}
+		
 	}
 
 	/**
@@ -319,7 +200,6 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
-		ultra_solenoid.set(true);
 		
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
@@ -334,8 +214,6 @@ public class Robot extends IterativeRobot {
 		leftThumbPush = driver.getRawButton(9);
 		rightThumbPush = driver.getRawButton(10);
 		
-		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
-		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
 		//boolean rotateToAngle = false;
 		
@@ -358,7 +236,7 @@ public class Robot extends IterativeRobot {
 			leftChassis.set((rotationPID.get()));
 		}
 		if(xButton){
-			gyro.reset();
+			gyroscope.reset();
 			resetEncoders();
 		}
 		if(yButton){
@@ -418,40 +296,12 @@ public class Robot extends IterativeRobot {
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
-
-	public double getUltrasonicYellowDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
-	}
-
-	public double getUltrasonicBlackDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
-	}
-    private void updateSmartDashboard() {
-		
-		SmartDashboard.putData("Gyro", gyro);
-		SmartDashboard.putNumber("Gyro Angle", gyro.getAngle());
-		SmartDashboard.putNumber("Gyro Rate", gyro.getRate());
-
-		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
-		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
-		SmartDashboard.putNumber("Encoder Distance", getDistance());
-		
-		SmartDashboard.putNumber("Kp: Bumpers", Kp);
-		SmartDashboard.putNumber("Ki: StartSelect", Ki);
-		SmartDashboard.putNumber("Kd: JoyPress", Kd);
-	}
-	
-	// This is the function that allows the robot to drive straight no matter what
-	// It automatically corrects itself and stays locked onto the set angle
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
-		double currentAngle = gyro.getAngle()%360.0;
+		double currentAngle = gyroscope.getAngle()%360.0;
 		System.out.println("driveStraight");
 		double error = heading - currentAngle;
-		//rotationPID.setEnabled(true);
-		//rotationPID.setSetpoint(0);
+
 		// calculate the speed for the motors
 		double leftSpeed = speed;
 		double rightSpeed = speed;
@@ -477,8 +327,25 @@ public class Robot extends IterativeRobot {
 		}
 	
 		// set the motors based on the inputted speed
-		leftChassis.set(leftSpeed);
-		rightChassis.set(rightSpeed);
+		leftBack.set(leftSpeed);
+		leftFront.set(leftSpeed);
+		rightBack.set(rightSpeed);
+		rightFront.set(rightSpeed);
+	}
+	
+    private void updateSmartDashboard() {
+		
+		SmartDashboard.putData("Gyro", gyroscope);
+		SmartDashboard.putNumber("Gyro Angle", gyroscope.getAngle());
+		SmartDashboard.putNumber("Gyro Rate", gyroscope.getRate());
+
+		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
+		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
+		SmartDashboard.putNumber("Encoder Distance", getDistance());
+		
+		SmartDashboard.putNumber("Kp: Bumpers", Kp);
+		SmartDashboard.putNumber("Ki: StartSelect", Ki);
+		SmartDashboard.putNumber("Kd: JoyPress", Kd);
 	}
 	private void stop(){
 		leftBack.set(0);
@@ -486,11 +353,69 @@ public class Robot extends IterativeRobot {
 		rightBack.set(0);
 		rightFront.set(0);
 	}
-	/*@Override
-	   This function is invoked periodically by the PID Controller, */
+	@Override
+	   /*This function is invoked periodically by the PID Controller, */
 	  /* based upon navX-MXP yaw angle input and PID Coefficients.    */
-	  /*public void pidWrite(double output) {
+	  public void pidWrite(double output) {
 	      rotateToAngleRate = output;
-	  }*/
+	  }
 	
 }
+/*case Straight2:
+resetEncoders();
+driveStraight(90, 0.3);
+if (distance > 10) {
+	stop();
+}
+timerStart = System.currentTimeMillis();
+autoStep = Step.Turn2;
+break;
+case Turn2:
+rotationPID.setEnabled(true);
+rotationPID.setSetpoint(180);
+leftChassis.set(rotationPID.get());
+rightChassis.set(-rotationPID.get());
+rotationPID.setEnabled(false);
+
+timerStart = System.currentTimeMillis();
+autoStep = Step.Straight3;
+break;
+case Straight3:
+resetEncoders();
+driveStraight(180, 0.3);
+if (distance > 10) {
+	stop();
+}
+timerStart = System.currentTimeMillis();
+autoStep = Step.Turn3;
+break;
+case Turn3:
+rotationPID.setEnabled(true);
+rotationPID.setSetpoint(270);
+leftChassis.set(rotationPID.get());
+rightChassis.set(-rotationPID.get());
+rotationPID.setEnabled(false);
+
+timerStart = System.currentTimeMillis();
+autoStep = Step.Straight4;
+break;
+case Straight4:
+resetEncoders();
+driveStraight(270, 0.3);
+if (distance > 10) {
+	stop();
+}
+timerStart = System.currentTimeMillis();
+autoStep = Step.Turn4;
+break;
+case Turn4:
+rotationPID.setEnabled(true);
+rotationPID.setSetpoint(0);
+leftChassis.set(rotationPID.get());
+rightChassis.set(-rotationPID.get());
+rotationPID.setEnabled(false);
+
+timerStart = System.currentTimeMillis();
+autoStep = Step.Done;
+break;*/
+
