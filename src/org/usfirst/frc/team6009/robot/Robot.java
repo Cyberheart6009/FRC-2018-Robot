@@ -45,9 +45,10 @@ import edu.wpi.first.wpilibj.SPI;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-public class Robot extends IterativeRobot implements PIDOutput {
+public class Robot extends IterativeRobot {
 	
-	double rotateToAngleRate;
+	//double rotateToAngleRate;
+	
 	// Constant defining encoder turns per inch of robot travel
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	
@@ -78,7 +79,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	//gyroscope
 	AHRS gyro;
-	ADXRS450_Gyro gyroscope;
+	//ADXRS450_Gyro gyroscope;
 	
 	boolean aButton, bButton, xButton, yButton, startButton, selectButton, upButton, downButton, lbumper, rbumper, start, select, leftThumbPush, rightThumbPush;
 	
@@ -132,8 +133,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
 		gyro = new AHRS(SPI.Port.kMXP);
-		gyroscope = new ADXRS450_Gyro();
-		gyroscope.calibrate();
+		//gyroscope = new ADXRS450_Gyro();
+		//gyroscope.calibrate();
 		
 		// Set up port for Ultrasonic Distance Sensor
 		ultrasonic_yellow = new AnalogInput(0);
@@ -141,9 +142,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		ultra_solenoid = new Solenoid(0);
 
 		
-		rotationPID = new PIDController(Kp, Ki, Kd, gyro, this);
-		rotationPID.setInputRange(-180.0f,  180.0f);
-	    rotationPID.setOutputRange(-1.0, 1.0);
+		rotationPID = new PIDController(Kp, Ki, Kd, gyro, gripper);
+		//rotationPID.setInputRange(-180.0f,  180.0f);
+	    //rotationPID.setOutputRange(-1.0, 1.0);
 		rotationPID.setSetpoint(0);
 		
 		
@@ -169,7 +170,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		autoSelected = (String)chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
+		gyro.reset();  // Reset the gyro so the heading at the start of the match is 0
 	}
 	
 
@@ -182,6 +183,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		if (autoSelected.equalsIgnoreCase(square)) {
 		switch (autoStep) {
 		case Straight:
+			resetEncoders();
 			driveStraight(0, 0.3);
 			if (distance > 10) {
 				stop();
@@ -335,25 +337,25 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
-		boolean rotateToAngle = false;
+		//boolean rotateToAngle = false;
 		
-		/*if(rotationPID.isEnabled()){
+		if(rotationPID.isEnabled()){
 			rightChassis.set(-(rotationPID.get()));
 			leftChassis.set((rotationPID.get()));
-		}*/
+		}
 		
 		if (bButton){
-			rotateToAngle = true;
-			rotationPID.setSetpoint(0);
+			//rotateToAngle = true;
+			//rotationPID.setSetpoint(0);
 					
-			//rotationPID.setEnabled(false);
+			rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			rotateToAngle = true;
-			rotationPID.setSetpoint(180);
-			//rotationPID.setEnabled(true);
-			/*rightChassis.set(-(rotationPID.get()));
-			leftChassis.set((rotationPID.get()));*/
+			//rotateToAngle = true;
+			//rotationPID.setSetpoint(180);
+			rotationPID.setEnabled(true);
+			rightChassis.set(-(rotationPID.get()));
+			leftChassis.set((rotationPID.get()));
 		}
 		if(xButton){
 			gyro.reset();
@@ -382,7 +384,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}
 		
 		
-        if ( rotateToAngle ) {
+       /* if ( rotateToAngle ) {
             rotationPID.enable();
             rightChassis.set(-(rotationPID.get()));
 			leftChassis.set((rotationPID.get()));
@@ -390,7 +392,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
         } else {
             rotationPID.disable();
             
-        }
+        }*/
 		
 		//System.out.println(rotationPID.get());
 		updateSmartDashboard();
@@ -484,11 +486,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rightBack.set(0);
 		rightFront.set(0);
 	}
-	@Override
-	  /* This function is invoked periodically by the PID Controller, */
+	/*@Override
+	   This function is invoked periodically by the PID Controller, */
 	  /* based upon navX-MXP yaw angle input and PID Coefficients.    */
-	  public void pidWrite(double output) {
+	  /*public void pidWrite(double output) {
 	      rotateToAngleRate = output;
-	  }
+	  }*/
 	
 }
