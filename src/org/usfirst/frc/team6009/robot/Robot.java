@@ -128,6 +128,12 @@ public class Robot extends IterativeRobot {
 		//Gyroscope Setup
 		gyroscope = new ADXRS450_Gyro();
 		gyroscope.calibrate();
+	
+		// Initialize ADB Communication 
+		System.out.println("Initializing adb");
+		RIOdroid.init();
+		System.out.println("adb Initialized");
+		System.out.println(RIOdroid.executeCommand("adb logcat"));
 		
 	}
 	
@@ -236,6 +242,7 @@ public class Robot extends IterativeRobot {
 
 	
 	public String androidData(){
+		box_position = RIOdroid.executeCommand("logcat");
 		return box_position;
 	}
 
