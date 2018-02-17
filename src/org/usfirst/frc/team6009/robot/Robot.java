@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
+import com.kauailabs.navx.frc.AHRS;
 
 import org.usfirst.frc.team6009.robot.Robot.Step;
 
@@ -38,6 +39,7 @@ import edu.wpi.first.wpilibj.SendableBase;
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.PIDSource;
+import edu.wpi.first.wpilibj.SPI;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -65,7 +67,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	String movementSelected;
 	
 	//auto cases
-	public enum Step { Straight, Done, Turn, Turn1, Turn2, Turn3, Turn4, Straight2, Straight3, Straight4 }
+	// Turn2, Turn3, Turn4, Straight2, Straight3, Straight4
+	public enum Step { Straight, Turn, Done }
 	public Step autoStep = Step.Straight;
 	public long timerStart;
 
@@ -95,7 +98,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	Encoder leftEncoder, rightEncoder;
 	
 	// Gyro
-	ADXRS450_Gyro gyroscope;
+	//ADXRS450_Gyro gyroscope;
+	AHRS gyroscope;
 	
 	//PID Variables
 	PIDController rotationPID;
@@ -168,8 +172,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rightEncoder = new Encoder(2,3);
 		
 		//Gyroscope Setup
-		gyroscope = new ADXRS450_Gyro();
-		gyroscope.calibrate();
+		gyroscope = new AHRS(SPI.Port.kMXP);
+		//gyroscope.calibrate();
 		
 		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, this);
 		
@@ -206,6 +210,89 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void autonomousPeriodic() {
 		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
+		double distance = getDistance();
+		if (positionSelected.equalsIgnoreCase(square)) {
+			switch (autoStep) {
+			case Straight:
+				resetEncoders();
+				driveStraight(0, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn;
+				break;
+			case Turn:
+				
+				rotationPID.setSetpoint(90);
+				rotationPID.setEnabled(true);
+				rightChassis.set(-(rotationPID.get()));
+				leftChassis.set((rotationPID.get()));
+				gyroscope.reset();
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Done;
+				break;
+			/*case Straight2:
+				driveStraight(90, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn2;
+				break;
+			case Turn2:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(180);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight3;
+				break;
+			case Straight3:
+				driveStraight(180, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn3;
+				break;
+			case Turn3:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(270);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight4;
+				break;
+			case Straight4:
+				driveStraight(270, 0.3);
+				if (distance > 10) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn4;
+				break;
+			case Turn4:
+				rotationPID.setEnabled(true);
+				rotationPID.setSetpoint(0);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				rotationPID.setEnabled(false);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Done;
+				break;*/
+			case Done:
+				leftChassis.set(0);
+				rightChassis.set(0);
+				break;
+			}
+		}
 		if (positionSelected == "left" || positionSelected == "right") {
 			//These are combined under 1 if section because they both start with switch
 			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
@@ -273,7 +360,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			turnInPlace(90);
+			squareDrive();
 		}
 		if(xButton){
 			gyroscope.reset();
@@ -346,8 +433,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void squareDrive() {
 		switch (squareStep){
 		case 0:
+			resetEncoders();
 			rotationPID.setEnabled(false);
-			driveDistanceStraight(10, 0.4);
+			driveDistanceStraight(30, 0.4);
 			squareStep = 1;
 			side += 1;
 			//if (side == 4) {return;}
