@@ -57,14 +57,19 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	private static final String kDefaultAuto = "Default";
 	private static final String kCustomAuto = "My Auto";
     final String leftSwitch = "left Switch";
+    final String leftSwitchSwitch = "left Switch Switch";
     final String square = "square";
 	String autoSelected;
 	SendableChooser<String> chooser;
 	
 	//auto cases
-		public enum Step { Straight, Turn,  Done }
+		public enum Step { Straight, Turn, Straight2, Turn2, Straight3, Straight4, Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
+		
+	// Analog Sensors
+	AnalogInput ultrasonic_yellow, ultrasonic_black;
+	Solenoid ultra_solenoid;
 
     SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator, PIDSpeed;
 	
@@ -105,6 +110,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		
 		chooser = new SendableChooser<String>();
 		chooser.addObject("left Switch", leftSwitch);
+		chooser.addObject("left Switch Switch", leftSwitchSwitch);
 		chooser.addObject("square", square);
 		SmartDashboard.putData("Auto choices", chooser);
 
@@ -132,6 +138,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		
 		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, this);
 		rotationPID.setSetpoint(0);
+		
+		// Set up port for Ultrasonic Distance Sensor
+		ultrasonic_yellow = new AnalogInput(0);
+		ultrasonic_black = new AnalogInput(1);
+		ultra_solenoid = new Solenoid(0);
 		
 	}
 	
@@ -192,10 +203,67 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			break;
 			
 		case Done:
-			leftChassis.set(0.0);
-			rightChassis.set(0.0);
+			stop();
 			break;
 		}
+		}
+		if (autoSelected.equalsIgnoreCase(leftSwitchSwitch)) {
+			switch (autoStep) {
+			case Straight:
+				resetEncoders();
+				driveStraight(0, 0.4);
+				if (distance > 215) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn;
+				break;
+			case Turn:
+				rotationPID.setSetpoint(90);
+				rotationPID.setEnabled(true);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight2;
+				break;
+			case Straight2:
+				rotationPID.setEnabled(false);
+				resetEncoders();
+				driveStraight(90, 0.4);
+				if (distance > 45.5) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn2;
+				break;
+			case Turn2:
+				rotationPID.setSetpoint(180);
+				rotationPID.setEnabled(true);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight3;
+				break;
+			case Straight3:
+				rotationPID.setEnabled(false);
+				resetEncoders();
+				driveStraight(180, 0.4);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight4;
+				break;
+			case Straight4:
+				rotationPID.setEnabled(false);
+				resetEncoders();
+				driveStraight(180, 0.4);
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Done;
+				break;
+			case Done:
+				stop();
+				break;
+			}
 		}
 		
 	}
@@ -205,6 +273,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		
+		ultra_solenoid.set(true);
 		
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
@@ -301,6 +371,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
+	
+	public double getUltrasonicYellowDistance(){
+		// Calculates distance in centimeters from ultrasonic distance sensor
+		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
+	}
+
+	public double getUltrasonicBlackDistance(){
+		// Calculates distance in centimeters from ultrasonic distance sensor
+		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
+	}
+	
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
 		double currentAngle = gyroscope.getAngle()%360.0;
@@ -352,12 +433,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		SmartDashboard.putNumber("Ki: StartSelect", Ki);
 		SmartDashboard.putNumber("Kd: JoyPress", Kd);
 	}
+    
 	private void stop(){
 		leftBack.set(0);
 		leftFront.set(0);
 		rightBack.set(0);
 		rightFront.set(0);
 	}
+	
 	@Override
 	   /*This function is invoked periodically by the PID Controller, */
 	  /* based upon navX-MXP yaw angle input and PID Coefficients.    */
