@@ -74,7 +74,7 @@ public class Robot extends IterativeRobot {
 	Joystick driver;
 	
 	//Boolean for buttons
-	boolean aButton, bButton;
+	boolean aButton, bButton, xButton, yButton;
 	
 	// Analog Sensors
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
@@ -122,7 +122,7 @@ public class Robot extends IterativeRobot {
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
-		rightChassis.setInverted(true);
+		leftChassis.setInverted(true);
 		
 		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
@@ -164,6 +164,8 @@ public class Robot extends IterativeRobot {
 	public void autonomousInit() {
 		m_autoSelected = m_chooser.getSelected();
 		System.out.println("Auto selected: " + m_autoSelected);
+		resetEncoders();
+		gyroscope.reset();
 	}
 
 	/**
@@ -171,70 +173,68 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		switch (m_autoSelected) {
-			case SquareAuto:
-				switch(autoStep){
-					case STRAIGHT:
-						if (getDistance() < 10){
-							driveStraight(0, 0.3);
-						}
-						else{
-							stop();
-							resetEncoders();
-							autoStep = Step.TURN;
-						}
-						
-						break;
-					case TURN:
-						if(turnRight(90)){
-							stop();
-							resetEncoders();
-							gyroscope.reset();
-							autoStep = Step.STRAIGHT;
-						}
-						break;
-				}
-				break;
-			case kCustomAuto:
-				// Put custom auto code here
-				break;
-			case kDefaultAuto:
-			default:
-				// Put default auto code here
-				break;
+		updateSmartDashboard();
+		if (m_autoSelected == SquareAuto) {
+			System.out.println("Square Auto Is Operating");
+			switch(autoStep){
+				case STRAIGHT:
+					if (getDistance() < 60){
+						driveStraight(23, -0.3);
+						System.out.println("Going Straight");
+					}
+					else{
+						stop();
+						resetEncoders();
+						autoStep = Step.TURN;
+						System.out.println("Encoders Reset!");
+					}
+					
+					break;
+				case TURN:
+					if(turnRight(90)){
+						stop();
+						resetEncoders();
+						gyroscope.reset();
+						autoStep = Step.STRAIGHT;
+						System.out.println("Turned Right");
+					}
+					break;
+			}
+		} else if (m_autoSelected == kCustomAuto) {
+			
+		} else if (m_autoSelected == kDefaultAuto) {
+			
 		}
 	}
 
 	/**
 	 * This function is called periodically during operator control.
 	 */
+	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
 		ultra_solenoid.set(true);
-		resetEncoders();
-		gyroscope.reset();
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
-		chassis.arcadeDrive(driver.getX(), -driver.getY());
+		chassis.arcadeDrive(driver.getX(), driver.getY());
 		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
+		xButton = driver.getRawButton(3);
+		yButton = driver.getRawButton(4);
 		
 		if (bButton){
-			gripper.set(-0.4);
+			driveStraight(0,-0.3);
 		} 
 		else if (aButton) {
-			chassis.tankDrive(0.6, -0.6);
-		} 
-		else {
-			//chassis.tankDrive(0.0, 0.0);
+			gyroscope.reset();
+			resetEncoders();
+		} else {
+			chassis.arcadeDrive(0,0);
 		}
-		
-		
-		
 		updateSmartDashboard();
 	}
-
+				
 	/**
 	 * This function is called periodically during test mode.
 	 */
@@ -294,7 +294,7 @@ public class Robot extends IterativeRobot {
 	
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
-		double currentAngle = gyroscope.getAngle()%360.0;
+		double currentAngle = (gyroscope.getAngle()%360.0);
 		//System.out.println("driveStraight");
 		double error = heading - currentAngle;
 		// calculate the speed for the motors
@@ -313,7 +313,7 @@ public class Robot extends IterativeRobot {
 			rightSpeed -= error * kP;
 		}
 	
-		// set the motors based on the inputted speed
+		// set the motors based on the inputed speed
 		leftBack.set(leftSpeed);
 		leftFront.set(leftSpeed);
 		rightBack.set(rightSpeed);
@@ -336,8 +336,11 @@ public class Robot extends IterativeRobot {
 		rightBack.set(-0.35);
 		rightFront.set(-0.35);
 
+		System.out.println("Turning Right");
+		
 		double currentAngle = gyroscope.getAngle();
 		if (currentAngle >= targetAngle - 10){
+			System.out.println("Stopped Turning Right");
 			return true;
 		}
 		return false;
