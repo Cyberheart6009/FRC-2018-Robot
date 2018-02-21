@@ -12,7 +12,6 @@
 //|																 |
 //|**************************************************************|
 
-
 package org.usfirst.frc.team6009.robot;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
@@ -48,7 +47,7 @@ import edu.wpi.first.wpilibj.SPI;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-public class Robot extends IterativeRobot implements PIDOutput {
+public class Robot extends IterativeRobot implements PIDOutput {	
 	String gameData;
 	// Auto Modes Setup
 	// Create Position Chooser and its Choices
@@ -68,7 +67,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	//auto cases
 	// Turn2, Turn3, Turn4, Straight2, Straight3, Straight4
-	public enum Step { Straight, Turn, Done }
+	public enum Step { Straight, Straight2, Straight3, Straight4, Turn, Turn1, Turn2, Turn3, Turn4, ElevatorUp1, GripperOut1 }
 	public Step autoStep = Step.Straight;
 	public long timerStart;
 
@@ -76,10 +75,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator;
+	SpeedController leftFront, leftBack, rightFront, rightBack, climber1, climber2, elevator1, elevator2, gripper1, gripper2;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis;
+	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, climberGroup, gripperGroup;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
@@ -98,8 +97,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	Encoder leftEncoder, rightEncoder;
 	
 	// Gyro
-	//ADXRS450_Gyro gyroscope;
-	AHRS gyroscope;
+	ADXRS450_Gyro gyroscope;
+	//AHRS gyroscope;
 	
 	//PID Variables
 	PIDController rotationPID;
@@ -147,16 +146,24 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
-		gripper = new Spark(4);
-		elevator = new Spark(5);
+		climber1 = new Spark(4);
+		climber2 = new Spark(5);
+		elevator1 = new Spark(6);
+		elevator2 = new Spark(7);
+		gripper1 = new Spark(8);
+		gripper2 = new Spark(9);
 		
 		driver = new Joystick(0);
 		
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
+		elevatorGroup = new SpeedControllerGroup(elevator1, elevator2);
+		climberGroup = new SpeedControllerGroup(climber1, climber2);
+		gripperGroup = new SpeedControllerGroup(gripper1, gripper2);
+		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
-		rightChassis.setInverted(true);
+		leftChassis.setInverted(true);
 		
 		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
@@ -172,11 +179,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rightEncoder = new Encoder(2,3);
 		
 		//Gyroscope Setup
-		gyroscope = new AHRS(SPI.Port.kMXP);
-		//gyroscope.calibrate();
+		gyroscope = new ADXRS450_Gyro();
+		//gyroscope = new AHRS(SPI.Port.kMXP);
+		gyroscope.calibrate();
 		
 		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, this);
-		
 	}
 
 	/**
@@ -194,14 +201,15 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void autonomousInit() {
 		//Assign selected modes to a variable
-		positionSelected = (String)positionChooser.getSelected();
-		movementSelected = (String)movementChooser.getSelected();
+		positionSelected = positionChooser.getSelected();
+		movementSelected = movementChooser.getSelected();
 		System.out.println("Position Selected: " + positionSelected);
 		System.out.println("Movement Selected" + movementSelected);
 		//Get Orientation of scale and store it in gameData
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		//Reset the gyro so the heading at the start of the match is 0
 		gyroscope.reset();
+		
 	}
 
 	/**
@@ -209,10 +217,33 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
 		double distance = getDistance();
 		if (positionSelected.equalsIgnoreCase(square)) {
-			switch (autoStep) {
+			System.out.println("Square Auto Is Operating");
+			switch(autoStep){
+				case Straight:
+					if (distance < 60){
+						driveStraight(23, 0.3);
+						System.out.println("Going Straight");
+					}
+					else{
+						stop();
+						resetEncoders();
+						autoStep = Step.Turn;
+						System.out.println("Encoders Reset!");
+					}
+					break;
+				case Turn:
+					if(turnRight(90)){
+						stop();
+						resetEncoders();
+						gyroscope.reset();
+						autoStep = Step.Straight;
+						System.out.println("Turned Right");
+					}
+					break;
+			}
+			/*switch (autoStep) {
 			case Straight:
 				resetEncoders();
 				driveStraight(0, 0.3);
@@ -233,7 +264,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.Done;
 				break;
-			/*case Straight2:
+			case Straight2:
 				driveStraight(90, 0.3);
 				if (distance > 10) {
 					stop();
@@ -286,13 +317,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.Done;
-				break;*/
+				break;
 			case Done:
 				leftChassis.set(0);
 				rightChassis.set(0);
 				break;
-			}
+			}*/
 		}
+		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
 		if (positionSelected == "left" || positionSelected == "right") {
 			//These are combined under 1 if section because they both start with switch
 			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
@@ -300,9 +332,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					// TODO Insert Code to move the Robot to the left side of the switch and drop a box into it
 					if (movementSelected == "switchSwitch") {
 						// TODO Insert Code to pick up box and plant it in switch
+						
 					}
 					if (movementSelected == "switchScale" && gameData.charAt(1) == 'L') {
 						// TODO Insert Code to pick up box and move to the left side of the scale
+						
 					}
 					if (movementSelected == "switchScale" && gameData.charAt(1) == 'R') {
 						// TODO Insert Code to pick up box and move to the right side of the scale
@@ -318,6 +352,70 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		if (positionSelected == "center") {
 			//These are combined under 1 if section because they both start with switch
 			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
+				switch (autoStep) {
+				case Straight:
+					resetEncoders();
+					driveStraight(0, 0.4);
+					if (distance > 70) {
+						stop();
+					}
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.Turn;
+					break;
+				}
+				if (gameData.charAt(0) == 'L') {
+					// TODO Insert Code to pick up box and move to the left side of the scale
+					switch (autoStep) {
+					case Turn:
+						rotationPID.setSetpoint(-90);
+						rotationPID.setEnabled(true);
+						leftChassis.set(rotationPID.get());
+						rightChassis.set(-rotationPID.get());
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Straight2;
+						break;
+					case Straight2:
+						resetEncoders();
+						driveStraight(0, 0.4);
+						if (distance >= 59) {
+							stop();
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Turn2;
+						break;
+					case Turn2:
+						rotationPID.setSetpoint(0);
+						rotationPID.setEnabled(true);
+						leftChassis.set(rotationPID.get());
+						rightChassis.set(-rotationPID.get());
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Straight3;
+						break;
+					case Straight3:
+						int height1 = 0; //remove this after an actual elevator height equation is created
+						resetEncoders();
+						driveStraight(0, 0.4);
+						if (distance >= 70) {
+							stop();
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Turn;
+						elevatorGroup.set(0.3);
+						if (height1 == 20) {
+							elevatorGroup.set(0);
+						}
+						break;
+					case GripperOut1:
+						gripperGroup.set(0.3);
+					default:
+						System.out.println("haha");
+						break;
+					}
+					
+				}
+				if (gameData.charAt(0) == 'R') {
+					// TODO Insert Code to pick up box and move to the right side of the scale
+				}
 				
 			}
 			//These are combined under 1 if section because they both start with scale
@@ -335,7 +433,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		ultra_solenoid.set(true);
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
-		chassis.arcadeDrive(driver.getX(), -driver.getY());
+		chassis.arcadeDrive(driver.getX(), driver.getY());
 		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
@@ -367,7 +465,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			resetEncoders();
 		}
 		if(yButton){
-			driveDistanceStraight(10, 0.4);
+			driveStraight(0, 0.3);
 		}
 		if (leftBumper) {
 			Kp -= 0.005;
@@ -455,7 +553,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	}
 	
 	public double getDistance(){
-		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
+		//return ((double)(leftEncoder.get() + rightEncoder.get())) / (ENCODER_COUNTS_PER_INCH * 2);
+		return (double)((leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
 
 	public double getUltrasonicYellowDistance(){
@@ -488,6 +587,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
 		double currentAngle = gyroscope.getAngle()%360.0;
+		System.out.println("Gyroscope Angle: " + gyroscope.getAngle());
+		System.out.println("Gyroscope Angle % 360.0: " + currentAngle);
 		System.out.println("driveStraight");
 		double error = heading - currentAngle;
 		//rotationPID.setEnabled(true);
@@ -520,6 +621,24 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftChassis.set(leftSpeed);
 		rightChassis.set(rightSpeed);
 	}
+	
+	private boolean turnRight(double targetAngle){
+		// We want to turn in place to 60 degrees 
+		leftBack.set(0.35);
+		leftFront.set(0.35);
+		rightBack.set(-0.35);
+		rightFront.set(-0.35);
+
+		System.out.println("Turning Right");
+		
+		double currentAngle = gyroscope.getAngle();
+		if (currentAngle >= targetAngle - 10){
+			System.out.println("Stopped Turning Right");
+			return true;
+		}
+		return false;
+	}
+	
 	private void stop(){
 		leftBack.set(0);
 		leftFront.set(0);
