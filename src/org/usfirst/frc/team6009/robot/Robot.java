@@ -141,13 +141,11 @@ public class Robot extends IterativeRobot {
 		gyroscope.calibrate();
 	
 		// Initialize ADB Communication 
-		/*
+		
 		System.out.println("Initializing adb");
 		RIOdroid.init();
 		RIOadb.init();
 		System.out.println("adb Initialized");
-		System.out.println(RIOdroid.executeCommand("adb logcat"));
-		Timer.delay(1);
 		
 		System.out.println("Begin ADB Tests");
 		//System.out.println("Kill ADB" + RIOdroid.executeCommand("adb kill-server"));
@@ -157,7 +155,7 @@ public class Robot extends IterativeRobot {
 		System.out.println("WORKED");
 		//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150"));
 		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S"));
-		System.out.println("logcat done");*/
+		System.out.println("logcat done");
 	}
 	
 	@Override
@@ -223,15 +221,11 @@ public class Robot extends IterativeRobot {
 		xButton = driver.getRawButton(3);
 		yButton = driver.getRawButton(4);
 		
-		if (bButton){
-			driveStraight(0,-0.3);
+		if (aButton) {
+			System.out.print(androidData());
 		} 
-		else if (aButton) {
-			gyroscope.reset();
-			resetEncoders();
-		} else {
-			chassis.arcadeDrive(0,0);
-		}
+		
+
 		updateSmartDashboard();
 	}
 				
@@ -288,7 +282,19 @@ public class Robot extends IterativeRobot {
 
 	
 	public String androidData(){
-		box_position = RIOdroid.executeCommand("logcat");
+		String box_data = RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S");
+		String[] split_data = box_data.split("\n") ;
+		// if split_data = 1 that means there was no line break & therefore no data
+		
+		if (split_data.length == 1 & split_data[0] == "--------- beginning of main"){
+			box_position = "NO DATA";
+		}
+		else{	// if the length of the split array is longer than 1 then 
+			box_position = split_data[(split_data.length-1)];
+		}
+		
+		box_position = box_data;
+		
 		return box_position;
 	}
 	
