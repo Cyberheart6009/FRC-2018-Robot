@@ -190,7 +190,7 @@ public class Robot extends IterativeRobot {
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		
-		//updateSmartDashboard();
+		updateSmartDashboard();
 		
 		climberGroup.set(operator.getRawAxis(1));
  		elevatorGroup.set(operator.getRawAxis(5));
@@ -237,7 +237,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void disabledPeriodic(){
-		//updateSmartDashboard();
+		updateSmartDashboard();
 	}
 	
 	public void resetEncoders(){
@@ -259,22 +259,22 @@ public class Robot extends IterativeRobot {
 		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
 	}
 
-	//private void updateSmartDashboard() {
+	private void updateSmartDashboard() {
 		
-		//SmartDashboard.putData("Gyro: ", gyroscope);
-		//SmartDashboard.putNumber("Gyro Angle: ", gyroscope.getAngle());
-		//SmartDashboard.putNumber("Gyro Rate: ", gyroscope.getRate());
-		
-		//SmartDashboard.putBoolean("Elevator Limit Switch Up: ", limitSwitchUpElevator.get());
- 		//SmartDashboard.putBoolean("Elevator Limit Switch Down: ", limitSwitchDownElevator.get());
- 		//SmartDashboard.putBoolean("Climber Limit Switch Up: ", limitSwitchUpClimber.get());
- 		//SmartDashboard.putBoolean("Climber Limit Switch Down: ", limitSwitchDownClimber.get());
+		SmartDashboard.putData("Gyro: ", gyroscope);
+		SmartDashboard.putNumber("Gyro Angle: ", gyroscope.getAngle());
+		SmartDashboard.putNumber("Gyro Rate: ", gyroscope.getRate());
 
-		//SmartDashboard.putNumber("Left Encoder Count: ", leftEncoder.get());
-		//SmartDashboard.putNumber("Right Encoder Count: ", rightEncoder.get());
-		//SmartDashboard.putNumber("Encoder Distance: ", getDistance());
+		SmartDashboard.putNumber("Left Encoder Count: ", leftEncoder.get());
+		SmartDashboard.putNumber("Right Encoder Count: ", rightEncoder.get());
+		SmartDashboard.putNumber("Encoder Distance: ", getDistance());
 		
-		//SmartDashboard.putNumber("Ultrasonic Yellow Distance: ", getUltrasonicYellowDistance());
-		//SmartDashboard.putNumber("Ultrasonic Black Distance: ", getUltrasonicBlackDistance());
-	//}
+		SmartDashboard.putBoolean("Elevator Limit Switch Up: ", limitSwitchUpElevator.get());
+ 		SmartDashboard.putBoolean("Elevator Limit Switch Down: ", limitSwitchDownElevator.get());
+ 		SmartDashboard.putBoolean("Climber Limit Switch Up: ", limitSwitchUpClimber.get());
+ 		SmartDashboard.putBoolean("Climber Limit Switch Down: ", limitSwitchDownClimber.get());
+		
+		SmartDashboard.putNumber("Ultrasonic Yellow Distance: ", getUltrasonicYellowDistance());
+		SmartDashboard.putNumber("Ultrasonic Black Distance: ", getUltrasonicBlackDistance());
+	}
 }
