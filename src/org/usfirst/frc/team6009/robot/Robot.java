@@ -34,8 +34,13 @@ import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Solenoid;
-import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.SPI;
+import roborio.java.src.com.kauailabs.navx.frc.*;
+import edu.wpi.first.wpilibj.SensorBase;
+import edu.wpi.first.wpilibj.DigitalInput;
+
+
+
 
 
 /**
@@ -45,6 +50,7 @@ import edu.wpi.first.wpilibj.SPI;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
+
 public class Robot extends IterativeRobot implements PIDOutput {
 	
 	double rotateToAngleRate;
@@ -63,20 +69,23 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	SendableChooser<String> chooser;
 	
 	//auto cases
-		public enum Step { Straight, Turn, Straight2, Turn2, Straight3, Straight4, Done }
+		public enum Step { Straight, Turn, Straight2, Turn2, Straight3, CubeOut, CubeIn, CubeOut2,  Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
 		
 	// Analog Sensors
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
 	Solenoid ultra_solenoid;
+	
+	//Limit Switches
+	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber, limitSwitchGripper;
 
-    SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator, PIDSpeed;
+    SpeedController leftFront, leftBack, rightFront, rightBack, gripper1, gripper2, elevator1, elevator2, climber1, climber2, PIDSpeed;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis;
 	
-	Encoder leftEncoder, rightEncoder;
+	Encoder leftEncoder, rightEncoder, leftElevator, rightElevator;
 	
 	DifferentialDrive chassis;
 	
@@ -113,8 +122,27 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		chooser.addObject("left Switch Switch", leftSwitchSwitch);
 		chooser.addObject("square", square);
 		SmartDashboard.putData("Auto choices", chooser);
+		
+		limitSwitchUpElevator = new DigitalInput(4);
+		limitSwitchDownElevator =  new DigitalInput(5);
+		limitSwitchUpClimber = new DigitalInput(6);
+		limitSwitchDownClimber = new DigitalInput(7);
+		limitSwitchGripper = new DigitalInput(8);
 
-
+		elevator1 = new Spark(6);
+		elevator2 = new Spark(7);
+		climber1 = new Spark(4);
+		climber2 = new Spark(5);
+		gripper1 = new Spark(8);
+		gripper2 = new Spark(9);
+		
+		leftElevator = new Encoder(4, 5);
+		rightElevator = new Encoder(6, 7);
+		
+		elevator2.setInverted(true);
+		climber2.setInverted(true);
+		gripper2.setInverted(true);
+		
 		leftFront = new Spark(0);
 		leftBack = new Spark(1);
 		
@@ -175,6 +203,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void autonomousPeriodic() {
 		double distance = getDistance();
+		double height = getElevatorheight();
 		if (autoSelected.equalsIgnoreCase(square)) {
 		switch (autoStep) {
 		case Straight:
@@ -212,7 +241,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			case Straight:
 				resetEncoders();
 				driveStraight(0, 0.4);
-				if (distance > 215) {
+				if (distance > 220) {
 					stop();
 				}
 				timerStart = System.currentTimeMillis();
@@ -245,21 +274,78 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				autoStep = Step.Straight3;
 				break;
 			case Straight3:
+				/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
+				in regards to our robot so using the tracking will make sure we are in line with the cube*/
+				
+				
 				rotationPID.setEnabled(false);
 				resetEncoders();
-				driveStraight(180, 0.4);
 				
+				
+				driveStraight(180, 0.4);
+				if (distance > 11){
+					stop();
+				}
+
 				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight4;
+				autoStep = Step.CubeOut;
 				break;
-			case Straight4:
+			case CubeOut:
+				elevator1.set(0.3);
+				elevator2.set(0.3);
+				if (height > 40) {
+					stop();
+				}
+				
+				gripper1.set(0.3);	
+				gripper2.set(0.3);
+				if (!limitSwitchGripper.get()) {
+					gripper1.set(0);
+					gripper2.set(0);
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.CubeIn;
+				break;
+			case CubeIn:
 				rotationPID.setEnabled(false);
 				resetEncoders();
-				driveStraight(180, 0.4);
 				
+				elevator1.set(-0.3);
+				elevator2.set(-0.3);
+				if (limitSwitchDownElevator.get()) {
+					stop();
+				}
+				
+				driveStraight(180, 0.4);
+				if (distance > 13) {
+					stop();
+				}
+				
+				gripper1.set(-0.3);
+				gripper2.set(-0.3);
+				if (limitSwitchGripper.get()) {
+					gripper1.set(0);
+					gripper2.set(0);
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.CubeOut2;
+				break;
+			case CubeOut2:
+				elevator1.set(0.3);
+				elevator2.set(0.3);
+				if (height > 40) {
+					stop();
+				}
+				gripper1.set(0.3);
+				gripper2.set(0.3);
+				if (!limitSwitchGripper.get()) {
+					gripper1.set(0);
+					gripper2.set(0);
+				}
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.Done;
 				break;
+			
 			case Done:
 				stop();
 				break;
@@ -288,7 +374,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		start = driver.getRawButton(8);
 		leftThumbPush = driver.getRawButton(9);
 		rightThumbPush = driver.getRawButton(10);
-		
 		
 		//boolean rotateToAngle = false;
 		
@@ -367,7 +452,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftEncoder.reset();
 		rightEncoder.reset();
 	}
-	
+	public double getElevatorheight(){
+		return ((double)(leftElevator.get() + rightElevator.get()) / (ENCODER_COUNTS_PER_INCH * 2));
+	}
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
@@ -439,6 +526,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftFront.set(0);
 		rightBack.set(0);
 		rightFront.set(0);
+		elevator1.set(0);
+		elevator2.set(0);
 	}
 	
 	@Override
