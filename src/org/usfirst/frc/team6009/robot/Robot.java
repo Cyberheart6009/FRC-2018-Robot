@@ -154,7 +154,7 @@ public class Robot extends IterativeRobot {
 		//RIOdroid.executeCommand("adb logcat -t 1");
 		System.out.println("WORKED");
 		//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150"));
-		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S"));
+		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
 		System.out.println("logcat done");
 	}
 	
@@ -283,17 +283,19 @@ public class Robot extends IterativeRobot {
 	
 	public String androidData(){
 		String box_data = RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S");
-		String[] split_data = box_data.split("\n") ;
+		String[] split_data = box_data.split("\n");
 		// if split_data = 1 that means there was no line break & therefore no data
 		
-		if (split_data.length == 1 & split_data[0] == "--------- beginning of main"){
+		if (split_data.length == 1){
 			box_position = "NO DATA";
 		}
 		else{	// if the length of the split array is longer than 1 then 
 			box_position = split_data[(split_data.length-1)];
+			
 		}
 		
-		box_position = box_data;
+		//box_position = box_data;
+		//box_position = split_data[(split_data.length-1)];
 		
 		return box_position;
 	}
