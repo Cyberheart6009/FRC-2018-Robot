@@ -64,6 +64,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	private static final String kCustomAuto = "My Auto";
     final String leftSwitch = "left Switch";
     final String leftSwitchSwitch = "left Switch Switch";
+    final String rightSwitchSwitch = "right Switch Switch";
     final String square = "square";
 	String autoSelected;
 	SendableChooser<String> chooser;
@@ -120,6 +121,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		chooser = new SendableChooser<String>();
 		chooser.addObject("left Switch", leftSwitch);
 		chooser.addObject("left Switch Switch", leftSwitchSwitch);
+		chooser.addObject("right Switch Switch", leftSwitchSwitch);
 		chooser.addObject("square", square);
 		SmartDashboard.putData("Auto choices", chooser);
 		
@@ -236,7 +238,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			break;
 		}
 		}
-		if (autoSelected.equalsIgnoreCase(leftSwitchSwitch)) {
+		if (autoSelected.equalsIgnoreCase(leftSwitchSwitch) || autoSelected.equalsIgnoreCase(rightSwitchSwitch)) {
 			switch (autoStep) {
 			case Straight:
 				resetEncoders();
@@ -247,13 +249,26 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.Turn;
 				break;
-			case Turn:
+			case Turn: 
+				
+				if (autoSelected == leftSwitchSwitch){
 				rotationPID.setSetpoint(90);
 				rotationPID.setEnabled(true);
 				leftChassis.set(rotationPID.get());
 				rightChassis.set(-rotationPID.get());
+	
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.Straight2;
+				}
+				else {
+				rotationPID.setSetpoint(-90);
+				rotationPID.setEnabled(true);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+					
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.Straight2;
+				}
 				break;
 			case Straight2:
 				rotationPID.setEnabled(false);
@@ -266,12 +281,25 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				autoStep = Step.Turn2;
 				break;
 			case Turn2:
+				
+				if (autoSelected == rightSwitchSwitch) {
 				rotationPID.setSetpoint(180);
 				rotationPID.setEnabled(true);
 				leftChassis.set(rotationPID.get());
 				rightChassis.set(-rotationPID.get());
+				
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.Straight3;
+				}
+				else {
+				rotationPID.setSetpoint(-180);
+				rotationPID.setEnabled(true);
+				leftChassis.set(rotationPID.get());
+				rightChassis.set(-rotationPID.get());
+				
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Straight3;
+				}
 				break;
 			case Straight3:
 				/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
