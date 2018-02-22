@@ -271,6 +271,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				}
 				break;
 			case Straight2:
+				if (autoSelected == leftSwitchSwitch) {
 				rotationPID.setEnabled(false);
 				resetEncoders();
 				driveStraight(90, 0.4);
@@ -279,6 +280,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				}
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.Turn2;
+				}
+				else {
+				rotationPID.setEnabled(false);
+				resetEncoders();
+				driveStraight(-90, 0.4);
+				if (distance > 45.5) {
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.Turn2;
+				}
 				break;
 			case Turn2:
 				
@@ -305,18 +317,28 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
 				in regards to our robot so using the tracking will make sure we are in line with the cube*/
 				
-				
+				if (autoSelected == leftSwitchSwitch) {
 				rotationPID.setEnabled(false);
 				resetEncoders();
-				
 				
 				driveStraight(180, 0.4);
 				if (distance > 11){
 					stop();
 				}
-
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.CubeOut;
+				}
+				else {
+				rotationPID.setEnabled(false);
+				resetEncoders();
+					
+				driveStraight(-180, 0.4);
+				if (distance > 11){
+					stop();
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.CubeOut;	
+				}
 				break;
 			case CubeOut:
 				elevator1.set(0.3);
@@ -337,18 +359,16 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			case CubeIn:
 				rotationPID.setEnabled(false);
 				resetEncoders();
-				
+				if (autoSelected == leftSwitchSwitch) {
 				elevator1.set(-0.3);
 				elevator2.set(-0.3);
 				if (limitSwitchDownElevator.get()) {
 					stop();
 				}
-				
 				driveStraight(180, 0.4);
 				if (distance > 13) {
 					stop();
 				}
-				
 				gripper1.set(-0.3);
 				gripper2.set(-0.3);
 				if (limitSwitchGripper.get()) {
@@ -357,6 +377,26 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				}
 				timerStart = System.currentTimeMillis();
 				autoStep = Step.CubeOut2;
+				}
+				else {
+				elevator1.set(-0.3);
+				elevator2.set(-0.3);
+				if (limitSwitchDownElevator.get()) {
+					stop();
+				}
+				driveStraight(-180, 0.4);
+				if (distance > 13) {
+					stop();
+				}
+				gripper1.set(-0.3);
+				gripper2.set(-0.3);
+				if (limitSwitchGripper.get()) {
+					gripper1.set(0);
+					gripper2.set(0);
+				}
+				timerStart = System.currentTimeMillis();
+				autoStep = Step.CubeOut2;
+				}
 				break;
 			case CubeOut2:
 				elevator1.set(0.3);
