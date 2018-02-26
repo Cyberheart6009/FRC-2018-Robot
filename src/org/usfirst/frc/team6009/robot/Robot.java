@@ -41,6 +41,12 @@ import edu.wpi.first.wpilibj.can.*;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
+
+/*TODO: 	- Robot Tip prevention (if angle > threshold) -> take over drive train motors and reverse to prevent the tip
+ * 			- Function to get phone logs and parse the data in order to retrieve and calculate the location of the box
+ * 			
+*/
+
 public class Robot extends IterativeRobot {
 	
 	// Auto Modes Setup
