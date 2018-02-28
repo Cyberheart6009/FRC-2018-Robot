@@ -35,9 +35,11 @@ import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.SPI;
-import roborio.java.src.com.kauailabs.navx.frc.*;
+//import roborio.java.src.com.kauailabs.navx.frc.*;
 import edu.wpi.first.wpilibj.SensorBase;
 import edu.wpi.first.wpilibj.DigitalInput;
+
+import com.kauailabs.navx.frc.*;
 
 
 
@@ -138,8 +140,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		gripper1 = new Spark(8);
 		gripper2 = new Spark(9);
 		
-		leftElevator = new Encoder(4, 5);
-		rightElevator = new Encoder(6, 7);
+		//leftElevator = new Encoder(4, 5);
+		//rightElevator = new Encoder(6, 7);
 		
 		elevator2.setInverted(true);
 		climber2.setInverted(true);
