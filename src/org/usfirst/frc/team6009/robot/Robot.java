@@ -35,6 +35,9 @@ import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.can.*;
+import edu.wpi.first.wpilibj.SPI;
+
+import com.kauailabs.navx.frc.AHRS;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -91,7 +94,7 @@ public class Robot extends IterativeRobot {
 	
 	// Gyro
 	ADXRS450_Gyro gyroscope;
-	
+	//AHRS gyroscope;
 	// PID Variables -WIP
 	double kP = 0.03;
 	
@@ -144,7 +147,8 @@ public class Robot extends IterativeRobot {
 		
 		//Gyroscope Setup
 		gyroscope = new ADXRS450_Gyro();
-		gyroscope.calibrate();
+		//gyroscope = new AHRS(SPI.Port.kMXP);
+		//gyroscope.calibrate();
 	
 		// Initialize ADB Communication 
 		
