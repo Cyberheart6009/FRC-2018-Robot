@@ -121,7 +121,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		chooser = new SendableChooser<String>();
 		chooser.addObject("left Switch", leftSwitch);
 		chooser.addObject("left Switch Switch", leftSwitchSwitch);
-		chooser.addObject("right Switch Switch", leftSwitchSwitch);
+		chooser.addObject("right Switch Switch", rightSwitchSwitch);
 		chooser.addObject("square", square);
 		SmartDashboard.putData("Auto choices", chooser);
 		
