@@ -154,12 +154,7 @@ public class Robot extends IterativeRobot {
 		System.out.println("adb Initialized");
 		
 		System.out.println("Begin ADB Tests");
-		//System.out.println("Kill ADB" + RIOdroid.executeCommand("adb kill-server"));
 		System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
-		//System.out.println("ADB DEVICES: " + RIOdroid.executeCommand("adb devices"));
-		//RIOdroid.executeCommand("adb logcat -t 1");
-		System.out.println("WORKED");
-		//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 150"));
 		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
 		System.out.println("logcat done");
 	}
@@ -168,6 +163,7 @@ public class Robot extends IterativeRobot {
 	public void autonomousInit() {
 		m_autoSelected = m_chooser.getSelected();
 		System.out.println("Auto selected: " + m_autoSelected);
+		autoStep = Step.STRAIGHT;
 		resetEncoders();
 		gyroscope.reset();
 	}
@@ -204,11 +200,9 @@ public class Robot extends IterativeRobot {
 					}
 					break;
 			}
-		} else if (m_autoSelected == kCustomAuto) {
-			
-		} else if (m_autoSelected == kDefaultAuto) {
-			
 		}
+		
+		return;
 	}
 
 	/**
@@ -305,6 +299,16 @@ public class Robot extends IterativeRobot {
 		
 		return box_position;
 	}
+	/*
+	private void tipPrevention(){
+		if(zangle > 15deg){
+			// Full reverse
+		}
+		if (zangle < -15deg){
+			// Full forward
+		}
+		 
+	}*/
 	
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
