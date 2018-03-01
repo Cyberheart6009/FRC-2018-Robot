@@ -238,7 +238,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 * This function is called periodically during autonomous.
 	 */
 	@Override
-	public void autonomousPeriodic() {
+	/*public void autonomousPeriodic() {
 		updateSmartDashboard();
 		if (positionSelected == square) {
 			System.out.println("Square Auto Is Operating");
@@ -269,15 +269,15 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}
 		
 		return;
-	}
-	/**public void autonomousPeriodic() {
+	}*/
+	public void autonomousPeriodic() {
 		double distance = getDistance();
 		if (positionSelected.equalsIgnoreCase(square)) {
 			System.out.println("Square Auto Is Operating");
 			switch(autoStep){
 				case Straight:
-					if (distance < 60){
-						driveStraight(23, 0.3);
+					if (getDistance() < 60){
+						driveStraight(0, 0.3);
 						System.out.println("Going Straight");
 					}
 					else{
@@ -298,7 +298,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					break;
 			}
 		}
-		double height = getElevatorheight();
+		/**km code begins**/
+		/*double height = getElevatorheight();
 		if (positionSelected.equalsIgnoreCase(straight)){
 			//driveStraight(0, 0.4);
 			leftChassis.set(0.3);
@@ -519,7 +520,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				stop();
 				break;
 			}
-		}
+		}*/
+		/**km code ends*/
 		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
 		if (positionSelected == "left" || positionSelected == "right") {
 			//These are combined under 1 if section because they both start with switch
@@ -552,7 +554,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				case Straight:
 					resetEncoders();
 					driveStraight(0, 0.4);
-					if (distance > 70) {
+					if (getDistance() <= 70) {
 						stop();
 					}
 					timerStart = System.currentTimeMillis();
@@ -619,7 +621,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				
 			}
 		}
-	}*/
+	}
 
 	/**
 	 * This function is called periodically during operator control.
