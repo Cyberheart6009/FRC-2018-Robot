@@ -228,6 +228,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		//Get Orientation of scale and store it in gameData
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		//Reset the gyro so the heading at the start of the match is 0
+		resetEncoders();
+		autoStep = Step.Straight;
 		gyroscope.reset();
 		
 	}
@@ -237,8 +239,40 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void autonomousPeriodic() {
+		updateSmartDashboard();
+		if (positionSelected == square) {
+			System.out.println("Square Auto Is Operating");
+			switch(autoStep){
+				case Straight:
+					if (getDistance() < 24){
+						driveStraight(0, 0.3);
+						System.out.println("Going Straight");
+					}
+					else{
+						stop();
+						resetEncoders();
+						autoStep = Step.Turn;
+						System.out.println("Encoders Reset!");
+					}
+					
+					break;
+				case Turn:
+					if(turnRight(90)){
+						stop();
+						resetEncoders();
+						gyroscope.reset();
+						autoStep = Step.Straight;
+						System.out.println("Turned Right");
+					}
+					break;
+			}
+		}
+		
+		return;
+	}
+	/**public void autonomousPeriodic() {
 		double distance = getDistance();
-		/*if (positionSelected.equalsIgnoreCase(square)) {
+		if (positionSelected.equalsIgnoreCase(square)) {
 			System.out.println("Square Auto Is Operating");
 			switch(autoStep){
 				case Straight:
@@ -263,10 +297,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					}
 					break;
 			}
-		}*/
+		}
 		double height = getElevatorheight();
 		if (positionSelected.equalsIgnoreCase(straight)){
-			driveStraight(0, 0.4);
+			//driveStraight(0, 0.4);
+			leftChassis.set(0.3);
+			rightChassis.set(0.3);
 			if (distance >= 70) {
 				stop();
 			}
@@ -380,7 +416,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				break;
 			case Straight3:
 				/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
-				in regards to our robot so using the tracking will make sure we are in line with the cube*/
+				in regards to our robot so using the tracking will make sure we are in line with the cube
 				
 				if (positionSelected == leftSwitchSwitch) {
 				rotationPID.setEnabled(false);
@@ -583,7 +619,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				
 			}
 		}
-	}
+	}*/
 
 	/**
 	 * This function is called periodically during operator control.
@@ -613,7 +649,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rightChassis.set(-(rotationPID.get()));
 			leftChassis.set((rotationPID.get()));
 		}*/
-		
+		double distance = getDistance();
 		if (bButton){
 			rotationPID.setEnabled(false);
 		} 
@@ -626,6 +662,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}
 		if(yButton){
 			driveStraight(0, 0.3);
+			if (distance >= 24) {
+				stop();
+				System.out.println("DriveStraight");
+			}
 		}
 		if (leftBumper) {
 			Kp -= 0.005;
@@ -751,9 +791,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
 		double currentAngle = gyroscope.getAngle()%360.0;
-		System.out.println("Gyroscope Angle: " + gyroscope.getAngle());
-		System.out.println("Gyroscope Angle % 360.0: " + currentAngle);
-		System.out.println("driveStraight");
+		//System.out.println("Gyroscope Angle: " + gyroscope.getAngle());
+		//System.out.println("Gyroscope Angle % 360.0: " + currentAngle);
+		//System.out.println("driveStraight");
 		double error = heading - currentAngle;
 		//rotationPID.setEnabled(true);
 		//rotationPID.setSetpoint(0);
@@ -790,13 +830,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		// We want to turn in place to 60 degrees 
 		leftBack.set(0.35);
 		leftFront.set(0.35);
-		rightBack.set(-0.35);
-		rightFront.set(-0.35);
+		rightBack.set(0.35);
+		rightFront.set(0.35);
 
 		System.out.println("Turning Right");
 		
 		double currentAngle = gyroscope.getAngle();
-		if (currentAngle >= targetAngle - 10){
+		if (currentAngle >= targetAngle - 2){
 			System.out.println("Stopped Turning Right");
 			return true;
 		}
