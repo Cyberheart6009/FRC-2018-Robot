@@ -17,7 +17,6 @@
 package org.usfirst.frc.team6009.robot;
 import org.spectrum3847.RIOdroid.RIOadb;
 import org.spectrum3847.RIOdroid.RIOdroid;
-import org.usfirst.frc.team6009.robot.Robot.Step;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -34,10 +33,9 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.can.*;
 import edu.wpi.first.wpilibj.SPI;
 
-import com.kauailabs.navx.frc.AHRS;
+//import com.kauailabs.navx.frc.AHRS;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -66,6 +64,7 @@ public class Robot extends IterativeRobot {
 	double oldEncoderCounts = 0;
 	long old_time = 0;
 	String box_position = "NO DATA";
+	boolean initializeADB = false;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -87,7 +86,6 @@ public class Robot extends IterativeRobot {
 	
 	// Analog Sensors
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
-	Solenoid ultra_solenoid;
 	
 	// Encoders
 	Encoder leftEncoder, rightEncoder;
@@ -138,7 +136,6 @@ public class Robot extends IterativeRobot {
 		
 		// Set up port for Ultrasonic Distance Sensor
 		ultrasonic_yellow = new AnalogInput(0);
-		ultra_solenoid = new Solenoid(0);
 		ultrasonic_black = new AnalogInput(1);
 		
 		// Set up Encoder ports
@@ -152,6 +149,7 @@ public class Robot extends IterativeRobot {
 	
 		// Initialize ADB Communication 
 		
+		if (initializeADB){
 		System.out.println("Initializing adb");
 		RIOdroid.init();
 		RIOadb.init();
@@ -161,6 +159,7 @@ public class Robot extends IterativeRobot {
 		System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
 		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
 		System.out.println("logcat done");
+		}
 	}
 	
 	@Override
@@ -182,8 +181,8 @@ public class Robot extends IterativeRobot {
 			System.out.println("Square Auto Is Operating");
 			switch(autoStep){
 				case STRAIGHT:
-					if (getDistance() < 60){
-						driveStraight(23, -0.3);
+					if (getDistance() < 24){
+						driveStraight(0, 0.3);
 						System.out.println("Going Straight");
 					}
 					else{
@@ -215,7 +214,6 @@ public class Robot extends IterativeRobot {
 	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
-		ultra_solenoid.set(true);
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
 		chassis.arcadeDrive(driver.getX(), driver.getY());
@@ -355,8 +353,8 @@ public class Robot extends IterativeRobot {
 		// We want to turn in place to 60 degrees 
 		leftBack.set(0.35);
 		leftFront.set(0.35);
-		rightBack.set(-0.35);
-		rightFront.set(-0.35);
+		rightBack.set(0.35);
+		rightFront.set(0.35);
 
 		System.out.println("Turning Right");
 		
