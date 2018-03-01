@@ -238,17 +238,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 * This function is called periodically during autonomous.
 	 */
 	@Override
-	/*public void autonomousPeriodic() {
+	public void autonomousPeriodic() {
 		updateSmartDashboard();
 		if (positionSelected == square) {
 			System.out.println("Square Auto Is Operating");
 			switch(autoStep){
 				case Straight:
-					if (getDistance() < 24){
+					if (getDistance() < 24) {
 						driveStraight(0, 0.3);
 						System.out.println("Going Straight");
 					}
-					else{
+					else {
 						stop();
 						resetEncoders();
 						autoStep = Step.Turn;
@@ -257,34 +257,36 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					
 					break;
 				case Turn:
-					if(turnRight(90)){
+					/*if(turnRight(90)){
 						stop();
 						resetEncoders();
 						gyroscope.reset();
 						autoStep = Step.Straight;
 						System.out.println("Turned Right");
-					}
+					}*/
+					resetEncoders();
+					gyroscope.reset();
+					rotationPID.setSetpoint(90);
+					rotationPID.setEnabled(true);
+					leftChassis.set(rotationPID.get());
+					rightChassis.set(-rotationPID.get());
+					autoStep = Step.Straight;
+					rotationPID.setEnabled(false);
 					break;
 			}
 		}
 		
 		return;
-	}*/
-	public void autonomousPeriodic() {
+	}
+	/*public void autonomousPeriodic() {
 		double distance = getDistance();
 		if (positionSelected.equalsIgnoreCase(square)) {
 			System.out.println("Square Auto Is Operating");
 			switch(autoStep){
 				case Straight:
-					if (getDistance() < 60){
-						driveStraight(0, 0.3);
-						System.out.println("Going Straight");
-					}
-					else{
-						stop();
-						resetEncoders();
+					if (driveDistanceStraight(24,0.3)){
 						autoStep = Step.Turn;
-						System.out.println("Encoders Reset!");
+						System.out.println("Moved Straight");
 					}
 					break;
 				case Turn:
@@ -523,7 +525,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}*/
 		/**km code ends*/
 		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
-		if (positionSelected == "left" || positionSelected == "right") {
+		/*if (positionSelected == "left" || positionSelected == "right") {
 			//These are combined under 1 if section because they both start with switch
 			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
 				if (gameData.charAt(0) == 'L') {
@@ -621,7 +623,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				
 			}
 		}
-	}
+	}*/
 
 	/**
 	 * This function is called periodically during operator control.
@@ -718,15 +720,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftChassis.set((rotationPID.get()));
 	}
 	
-	public void driveDistanceStraight(double distance, double speed) {
-		double currentDistance = getDistance();
-		driveStraight(0, 0.4);
+	public boolean driveDistanceStraight(double distance, double speed) {
 		System.out.println("driveDistanceStraight()");
-		if (currentDistance > distance){
+		if (getDistance() < distance){
+			driveStraight(0, speed);
+			return false;
+		}
+		else {
 			System.out.println("current distance end");
 			stop();
 			resetEncoders();
-			return;
+			return true;
 		}
 	}
 	
@@ -860,7 +864,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 }
 
 
-//Legacy Autonomous & Katerinas Square Auto
+//Legacy Autonomous & km Square Auto
 /**public void autonomousPeriodic() {
 	double distance = getDistance();
 	if (positionSelected.equalsIgnoreCase(square)) {
