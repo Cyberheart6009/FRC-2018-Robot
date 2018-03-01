@@ -150,15 +150,18 @@ public class Robot extends IterativeRobot {
 		// Initialize ADB Communication 
 		
 		if (initializeADB){
-		System.out.println("Initializing adb");
-		RIOdroid.init();
-		RIOadb.init();
-		System.out.println("adb Initialized");
-		
-		System.out.println("Begin ADB Tests");
-		System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
-		System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
-		System.out.println("logcat done");
+			System.out.println("Initializing adb");
+			RIOdroid.init();
+			RIOadb.init();
+			System.out.println("adb Initialized");
+			
+			System.out.println("Begin ADB Tests");
+			System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
+			System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
+			System.out.println("logcat done");
+		}
+		else{
+			System.out.println("RAN INIT");
 		}
 	}
 	
