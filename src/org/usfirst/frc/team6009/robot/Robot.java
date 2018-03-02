@@ -130,7 +130,7 @@ public class Robot extends IterativeRobot {
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
-		leftChassis.setInverted(true);
+		rightChassis.setInverted(true);
 		
 		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
@@ -226,9 +226,11 @@ public class Robot extends IterativeRobot {
 		xButton = driver.getRawButton(3);
 		yButton = driver.getRawButton(4);
 		
-		if (aButton) {
+		if (xButton) {
 			//System.out.print(androidData());
 			elevatorEncoder.reset();
+			resetEncoders();
+			gyroscope.reset();
 		} 
 		
 
