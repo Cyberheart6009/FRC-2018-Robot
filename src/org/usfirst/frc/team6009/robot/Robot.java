@@ -112,15 +112,15 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	PIDController rotationPID;
 	
 	// CONSTANT VARIABLES FOR PID
-	//double Kp = 0.075;
+	//double KpTurn = 0.075;
 	double Kp = 0.03;
-	double Ki = 0;
+	//double Ki = 0;
 	//double Kd = 0.195;
-	double Kd = 0.0075;
+	//double Kd = 0.0195;
 	
-	/*double kp = 0.005;
-	double ki = 0.0;
-	double kd = 0.0075;*/
+	double KpTurn = 0.010;
+	double Ki = 0.0;
+	double Kd = 0.0195;
 	
 	//Square movement variables
 	int squareStep;
@@ -203,7 +203,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		gyroscope = new AHRS(SPI.Port.kMXP);
 		//gyroscope.calibrate();
 		
-		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, this);
+		rotationPID = new PIDController(KpTurn, Ki, Kd, gyroscope, this);
 	}
 
 	/**
@@ -253,6 +253,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						resetEncoders();
 						autoStep = Step.Turn;
 						System.out.println("Encoders Reset!");
+						gyroscope.reset();
 					}
 					
 					break;
@@ -264,14 +265,23 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						autoStep = Step.Straight;
 						System.out.println("Turned Right");
 					}*/
-					resetEncoders();
-					gyroscope.reset();
-					rotationPID.setSetpoint(90);
-					rotationPID.setEnabled(true);
-					leftChassis.set(rotationPID.get());
-					rightChassis.set(-rotationPID.get());
-					autoStep = Step.Straight;
-					rotationPID.setEnabled(false);
+					if (gyroscope.getAngle() <= 89) {
+						rotationPID.setSetpoint(90);
+						rotationPID.setEnabled(true);
+						leftChassis.set(rotationPID.get());
+						rightChassis.set(-rotationPID.get());
+					} else {
+						resetEncoders();
+						autoStep = Step.Straight;
+						rotationPID.setEnabled(false);
+						gyroscope.reset();
+					}
+					/*if (turnInPlace(90)) {
+					  	resetEncoders();
+						autoStep = Step.Straight;
+						rotationPID.setEnabled(false);
+						gyroscope.reset();
+					}*/
 					break;
 			}
 		}
@@ -658,13 +668,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			squareDrive();
+			rotationPID.setSetpoint(0);
+			rotationPID.setEnabled(true);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
 		}
 		if(xButton){
 			gyroscope.reset();
 			resetEncoders();
 		}
 		if(yButton){
+			
 			driveStraight(0, 0.3);
 			if (distance >= 24) {
 				stop();
@@ -712,12 +726,18 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		System.out.println("Yes");
 	}
 	
-	public void turnInPlace(double setPoint) {
-		gyroscope.reset();
-		rotationPID.setSetpoint(setPoint);
-		rotationPID.setEnabled(true);
-		rightChassis.set(-(rotationPID.get()));
-		leftChassis.set((rotationPID.get()));
+	public boolean turnInPlace(double setPoint) {
+		/* FIXME Setpoint is currently required to be exact, implement a range*/
+		if (gyroscope.getAngle() >= (setPoint - 2) && gyroscope.getAngle() <= (setPoint + 2)) {
+			return true;
+		} else {
+			rotationPID.setSetpoint(setPoint);
+			rotationPID.setEnabled(true);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			return false;
+		}
+		
 	}
 	
 	public boolean driveDistanceStraight(double distance, double speed) {
