@@ -387,10 +387,8 @@ public class Robot extends IterativeRobot {
 		}
 	
 		// set the motors based on the inputed speed
-		leftBack.set(leftSpeed);
-		leftFront.set(leftSpeed);
-		rightBack.set(rightSpeed);
-		rightFront.set(rightSpeed);
+		leftChassis.set(leftSpeed);
+		rightChassis.set(rightSpeed);
 	}
 	
 	private void stop(){
@@ -412,7 +410,7 @@ public class Robot extends IterativeRobot {
 		System.out.println("Turning Right");
 		
 		double currentAngle = gyroscope.getAngle();
-		if (currentAngle >= targetAngle - 10){
+		if (currentAngle >= targetAngle - 2){
 			System.out.println("Stopped Turning Right");
 			return true;
 		}
