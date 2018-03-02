@@ -32,6 +32,7 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.DigitalInput;
 import org.spectrum3847.RIOdroid.RIOadb;
 import org.spectrum3847.RIOdroid.RIOdroid;
 
@@ -71,16 +72,20 @@ public class Robot extends IterativeRobot {
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevatorOne, elevatorTwo, climberOne, climberTwo;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis;
+	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, climberGroup;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
 	
+	//LimitSwitch
+	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber;
+	
 	// Joystick Definitions
 	Joystick driver;
+	Joystick operator;
 	
 	//Boolean for buttons
 	boolean aButton, bButton, xButton, yButton;
@@ -120,14 +125,26 @@ public class Robot extends IterativeRobot {
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
-		gripper = new Spark(4);
+		climberOne = new Spark(4);
+		climberTwo = new Spark(5);
+		elevatorOne = new Spark(6);
+		elevatorTwo = new Spark(7);
 		
 		// Defines Joystick ports
 		driver = new Joystick(0);
+		operator = new Joystick(1);
 		
+		//LimitSwitch Port Assignment
+		limitSwitchUpElevator = new DigitalInput(4);
+		limitSwitchDownElevator =  new DigitalInput(5);
+		limitSwitchUpClimber = new DigitalInput(6);
+		limitSwitchDownClimber = new DigitalInput(7);
+
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
+		elevatorGroup = new SpeedControllerGroup(elevatorOne, elevatorTwo);
+		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
@@ -233,6 +250,36 @@ public class Robot extends IterativeRobot {
 			gyroscope.reset();
 		} 
 		
+		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
+			elevatorGroup.set(operator.getRawAxis(5));
+		}
+		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(5) > 0)) { 
+ 			elevatorGroup.set(0);
+ 			System.out.println("UP ELEVATOR limit Switct being pressed while DOWN Joystick is pressed");
+ 		}
+		if (!limitSwitchDownElevator.get() & (operator.getRawAxis(5) < 0)) { 
+ 			elevatorGroup.set(0);
+ 			System.out.println("DOWN ELEVATOR limit Switct being pressed while UP Joystick is pressed");
+ 		}
+		//else {
+			//elevatorGroup.set(0);
+		//}
+ 			
+		if (limitSwitchUpClimber.get() & limitSwitchDownClimber.get()) {
+			climberGroup.set(operator.getRawAxis(1));
+		}
+		
+		if (!limitSwitchUpClimber.get() & (operator.getRawAxis(1) > 0)) { 
+ 			climberGroup.set(0);
+ 			System.out.println("UP CLIMBER limit Switct being pressed while DOWN Joystick is pressed");	
+ 		}
+		if (!limitSwitchDownClimber.get() & (operator.getRawAxis(1) < 0)) {
+			climberGroup.set(0);
+ 			System.out.println("DOWN CLIMBER limit Switct being pressed while UP Joystick is pressed");	
+ 		}
+		//else {
+			//climberGroup.set(0); 
+		//}
 
 		updateSmartDashboard();
 	}
