@@ -39,7 +39,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.SensorBase;
 import edu.wpi.first.wpilibj.DigitalInput;
 
-import com.kauailabs.navx.frc.*;
+import com.kauailabs.navx.frc.AHRS;
 
 
 
@@ -209,216 +209,227 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		double distance = getDistance();
 		double height = getElevatorheight();
 		if (autoSelected.equalsIgnoreCase(square)) {
-		switch (autoStep) {
-		case Straight:
-			rotationPID.setEnabled(false);
-			gyroscope.reset();
-			resetEncoders();
-			
-			driveStraight(0, 0.3);
-			
-			if (distance > 10) {
-				stop();
-			}
-			
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Turn;
-			break;
-			
-		case Turn:
-			rotationPID.setEnabled(true);
-			rotationPID.setSetpoint(90);
-			leftChassis.set(rotationPID.get());
-			rightChassis.set(-rotationPID.get());
-			
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Straight;
-			break;
-			
-		case Done:
-			stop();
-			break;
-		}
+			switch (autoStep) {
+				case Straight:
+					if (getDistance() < 24) {
+						driveStraight(0, 0.3);
+						System.out.println("Going Straight");
+					}
+					else {
+						stop();
+						resetEncoders();
+						autoStep = Step.Turn;
+						System.out.println("Encoders Reset!");
+					}
+					break;
+					/*rotationPID.setEnabled(false);
+					gyroscope.reset();
+					resetEncoders();
+					
+					driveStraight(0, 0.3);
+					
+					if (distance > 10) {
+						stop();
+					}*/
+				case Turn:
+					resetEncoders();
+					gyroscope.reset();
+					rotationPID.setSetpoint(90);
+					rotationPID.setEnabled(true);
+					leftChassis.set(rotationPID.get());
+					rightChassis.set(-rotationPID.get());
+					autoStep = Step.Straight;
+					rotationPID.setEnabled(false);
+					break;
+					/*if(turnRight(90)){
+						stop();
+						resetEncoders();
+						gyroscope.reset();
+						autoStep = Step.Straight;
+						System.out.println("Turned Right");
+					}*/
+				case Done:
+					stop();
+					break;
+				}
 		}
 		if (autoSelected.equalsIgnoreCase(leftSwitchSwitch) || autoSelected.equalsIgnoreCase(rightSwitchSwitch)) {
 			switch (autoStep) {
-			case Straight:
-				resetEncoders();
-				driveStraight(0, 0.4);
-				if (distance > 220) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn;
-				break;
-			case Turn: 
-				
-				if (autoSelected == leftSwitchSwitch){
-				rotationPID.setSetpoint(90);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-	
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight2;
-				}
-				else {
-				rotationPID.setSetpoint(-90);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-					
+				case Straight:
+					resetEncoders();
+					driveStraight(0, 0.4);
+					if (distance > 220) {
+						stop();
+					}
 					timerStart = System.currentTimeMillis();
-					autoStep = Step.Straight2;
-				}
-				break;
-			case Straight2:
-				if (autoSelected == leftSwitchSwitch) {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				driveStraight(90, 0.4);
-				if (distance > 45.5) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn2;
-				}
-				else {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				driveStraight(-90, 0.4);
-				if (distance > 45.5) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn2;
-				}
-				break;
-			case Turn2:
-				
-				if (autoSelected == rightSwitchSwitch) {
-				rotationPID.setSetpoint(180);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight3;
-				}
-				else {
-				rotationPID.setSetpoint(-180);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight3;
-				}
-				break;
-			case Straight3:
-				/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
-				in regards to our robot so using the tracking will make sure we are in line with the cube*/
-				
-				if (autoSelected == leftSwitchSwitch) {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				
-				driveStraight(180, 0.4);
-				if (distance > 11){
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut;
-				}
-				else {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-					
-				driveStraight(-180, 0.4);
-				if (distance > 11){
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut;	
-				}
-				break;
-			case CubeOut:
-				elevator1.set(0.3);
-				elevator2.set(0.3);
-				if (height > 40) {
-					stop();
-				}
-				
-				gripper1.set(0.3);	
-				gripper2.set(0.3);
-				if (!limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeIn;
-				break;
-			case CubeIn:
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				if (autoSelected == leftSwitchSwitch) {
-				elevator1.set(-0.3);
-				elevator2.set(-0.3);
-				if (limitSwitchDownElevator.get()) {
-					stop();
-				}
-				driveStraight(180, 0.4);
-				if (distance > 13) {
-					stop();
-				}
-				gripper1.set(-0.3);
-				gripper2.set(-0.3);
-				if (limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut2;
-				}
-				else {
-				elevator1.set(-0.3);
-				elevator2.set(-0.3);
-				if (limitSwitchDownElevator.get()) {
-					stop();
-				}
-				driveStraight(-180, 0.4);
-				if (distance > 13) {
-					stop();
-				}
-				gripper1.set(-0.3);
-				gripper2.set(-0.3);
-				if (limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut2;
-				}
-				break;
-			case CubeOut2:
-				elevator1.set(0.3);
-				elevator2.set(0.3);
-				if (height > 40) {
-					stop();
-				}
-				gripper1.set(0.3);
-				gripper2.set(0.3);
-				if (!limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Done;
-				break;
+					autoStep = Step.Turn;
+					break;
+				case Turn: 
+					if (autoSelected == leftSwitchSwitch){
+						rotationPID.setSetpoint(90);
+						rotationPID.setEnabled(true);
+						leftChassis.set(rotationPID.get());
+						rightChassis.set(-rotationPID.get());
 			
-			case Done:
-				stop();
-				break;
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Straight2;
+					}
+					else {
+						rotationPID.setSetpoint(-90);
+						rotationPID.setEnabled(true);
+						leftChassis.set(rotationPID.get());
+						rightChassis.set(-rotationPID.get());
+						
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Straight2;
+					}
+					break;
+				case Straight2:
+					if (autoSelected == leftSwitchSwitch) {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+						driveStraight(90, 0.4);
+						if (distance > 45.5) {
+							stop();
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Turn2;
+					}
+					else {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+						driveStraight(-90, 0.4);
+						if (distance > 45.5) {
+							stop();
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Turn2;
+					}
+					break;
+				case Turn2:
+					
+					if (autoSelected == rightSwitchSwitch) {
+						rotationPID.setSetpoint(180);
+						rotationPID.setEnabled(true);
+						leftChassis.set(rotationPID.get());
+						rightChassis.set(-rotationPID.get());
+						
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Straight3;
+					}
+					else {
+						rotationPID.setSetpoint(-180);
+						rotationPID.setEnabled(true);
+						leftChassis.set(rotationPID.get());
+						rightChassis.set(-rotationPID.get());
+						
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Straight3;
+					}
+					break;
+				case Straight3:
+					/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
+					in regards to our robot so using the tracking will make sure we are in line with the cube*/
+					
+					if (autoSelected == leftSwitchSwitch) {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+						
+						driveStraight(180, 0.4);
+						if (distance > 11){
+							stop();
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.CubeOut;
+					}
+					else {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+							
+						driveStraight(-180, 0.4);
+						if (distance > 11){
+							stop();
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.CubeOut;	
+					}
+					break;
+				case CubeOut:
+					elevator1.set(0.3);
+					elevator2.set(0.3);
+					if (height > 40) {
+						stop();
+					}
+					gripper1.set(0.3);	
+					gripper2.set(0.3);
+					if (!limitSwitchGripper.get()) {
+						gripper1.set(0);
+						gripper2.set(0);
+					}
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.CubeIn;
+					break;
+				case CubeIn:
+					rotationPID.setEnabled(false);
+					resetEncoders();
+					if (autoSelected == leftSwitchSwitch) {
+						elevator1.set(-0.3);
+						elevator2.set(-0.3);
+						if (limitSwitchDownElevator.get()) {
+							stop();
+						}
+						driveStraight(180, 0.4);
+						if (distance > 13) {
+							stop();
+						}
+						gripper1.set(-0.3);
+						gripper2.set(-0.3);
+						if (limitSwitchGripper.get()) {
+							gripper1.set(0);
+							gripper2.set(0);
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.CubeOut2;
+					}
+					else {
+						elevator1.set(-0.3);
+						elevator2.set(-0.3);
+						if (limitSwitchDownElevator.get()) {
+							stop();
+						}
+						driveStraight(-180, 0.4);
+						if (distance > 13) {
+							stop();
+						}
+						gripper1.set(-0.3);
+						gripper2.set(-0.3);
+						if (limitSwitchGripper.get()) {
+							gripper1.set(0);
+							gripper2.set(0);
+						}
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.CubeOut2;
+					}
+					break;
+				case CubeOut2:
+					elevator1.set(0.3);
+					elevator2.set(0.3);
+					if (height > 40) {
+						stop();
+					}
+					gripper1.set(0.3);
+					gripper2.set(0.3);
+					if (!limitSwitchGripper.get()) {
+						gripper1.set(0);
+						gripper2.set(0);
+					}
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.Done;
+					break;
+				
+				case Done:
+					stop();
+					break;
 			}
 		}
 		
