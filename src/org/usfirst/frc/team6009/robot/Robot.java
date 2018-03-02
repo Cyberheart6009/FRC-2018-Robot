@@ -15,8 +15,7 @@
 
 
 package org.usfirst.frc.team6009.robot;
-import org.spectrum3847.RIOdroid.RIOadb;
-import org.spectrum3847.RIOdroid.RIOdroid;
+
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -31,11 +30,12 @@ import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.SPI;
+import org.spectrum3847.RIOdroid.RIOadb;
+import org.spectrum3847.RIOdroid.RIOdroid;
 
-//import com.kauailabs.navx.frc.AHRS;
+import com.kauailabs.navx.frc.AHRS;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -60,6 +60,7 @@ public class Robot extends IterativeRobot {
 	
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
+	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 1;
 	double currentSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
@@ -88,11 +89,11 @@ public class Robot extends IterativeRobot {
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
 	
 	// Encoders
-	Encoder leftEncoder, rightEncoder;
+	Encoder leftEncoder, rightEncoder, elevatorEncoder;
 	
 	// Gyro
-	ADXRS450_Gyro gyroscope;
-	//AHRS gyroscope;
+	//ADXRS450_Gyro gyroscope;
+	AHRS gyroscope;
 	// PID Variables -WIP
 	double kP = 0.03;
 	
@@ -141,10 +142,11 @@ public class Robot extends IterativeRobot {
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
 		rightEncoder = new Encoder(2,3);
+		elevatorEncoder = new Encoder(8,9);
 		
 		//Gyroscope Setup
-		gyroscope = new ADXRS450_Gyro();
-		//gyroscope = new AHRS(SPI.Port.kMXP);
+		//gyroscope = new ADXRS450_Gyro();
+		gyroscope = new AHRS(SPI.Port.kMXP);
 		//gyroscope.calibrate();
 	
 		// Initialize ADB Communication 
@@ -219,7 +221,7 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
-		chassis.arcadeDrive(driver.getX(), driver.getY());
+		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
@@ -227,7 +229,8 @@ public class Robot extends IterativeRobot {
 		yButton = driver.getRawButton(4);
 		
 		if (aButton) {
-			System.out.print(androidData());
+			//System.out.print(androidData());
+			elevatorEncoder.reset();
 		} 
 		
 
@@ -381,6 +384,8 @@ public class Robot extends IterativeRobot {
 		
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
+		
+		SmartDashboard.putNumber("Elevator Encoder Counts", elevatorEncoder.get());
 		
 		SmartDashboard.putNumber("Robot Speed", robotSpeed());
 		
