@@ -171,6 +171,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		gripper1 = new Spark(8);
 		gripper2 = new Spark(9);
 		
+		//Creating the Joystick object
 		driver = new Joystick(0);
 		
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
@@ -238,7 +239,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 * This function is called periodically during autonomous.
 	 */
 	@Override
-	public void autonomousPeriodic() {
+	/*public void autonomousPeriodic() {
 		updateSmartDashboard();
 		if (positionSelected == square) {
 			System.out.println("Square Auto Is Operating");
@@ -255,17 +256,16 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						System.out.println("Encoders Reset!");
 						gyroscope.reset();
 					}
-					
 					break;
 				case Turn:
-					/*if(turnRight(90)){
+					if(turnRight(90)){
 						stop();
 						resetEncoders();
 						gyroscope.reset();
 						autoStep = Step.Straight;
 						System.out.println("Turned Right");
-					}*/
-					if (gyroscope.getAngle() <= 89) {
+					}
+					/*if (gyroscope.getAngle() <= 89) {
 						rotationPID.setSetpoint(90);
 						rotationPID.setEnabled(true);
 						leftChassis.set(rotationPID.get());
@@ -275,21 +275,20 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						autoStep = Step.Straight;
 						rotationPID.setEnabled(false);
 						gyroscope.reset();
-					}
+					}*/
 					/*if (turnInPlace(90)) {
 					  	resetEncoders();
 						autoStep = Step.Straight;
 						rotationPID.setEnabled(false);
 						gyroscope.reset();
-					}*/
+					}
 					break;
 			}
 		}
 		
-		return;
-	}
-	/*public void autonomousPeriodic() {
-		double distance = getDistance();
+		return;*/
+	
+	public void autonomousPeriodic() {
 		if (positionSelected.equalsIgnoreCase(square)) {
 			System.out.println("Square Auto Is Operating");
 			switch(autoStep){
@@ -300,18 +299,25 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					}
 					break;
 				case Turn:
-					if(turnRight(90)){
+					/*if(turnRight(90)){
 						stop();
 						resetEncoders();
 						gyroscope.reset();
 						autoStep = Step.Straight;
+						System.out.println("Turned Right");
+					}*/
+					if (turnInPlace(90)) {
+					  	resetEncoders();
+						autoStep = Step.Straight;
+						rotationPID.setEnabled(false);
+						gyroscope.reset();
 						System.out.println("Turned Right");
 					}
 					break;
 			}
 		}
 		/**km code begins**/
-		/*double height = getElevatorheight();
+		/*double height = getElev/atorheight();
 		if (positionSelected.equalsIgnoreCase(straight)){
 			//driveStraight(0, 0.4);
 			leftChassis.set(0.3);
@@ -535,7 +541,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}*/
 		/**km code ends*/
 		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
-		/*if (positionSelected == "left" || positionSelected == "right") {
+		if (positionSelected == "left" || positionSelected == "right") {
 			//These are combined under 1 if section because they both start with switch
 			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
 				if (gameData.charAt(0) == 'L') {
@@ -587,7 +593,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					case Straight2:
 						resetEncoders();
 						driveStraight(0, 0.4);
-						if (distance >= 59) {
+						if (getDistance() >= 59) {
 							stop();
 						}
 						timerStart = System.currentTimeMillis();
@@ -605,7 +611,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						int height1 = 0; //remove this after an actual elevator height equation is created
 						resetEncoders();
 						driveStraight(0, 0.4);
-						if (distance >= 70) {
+						if (getDistance() >= 70) {
 							stop();
 						}
 						timerStart = System.currentTimeMillis();
@@ -633,7 +639,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				
 			}
 		}
-	}*/
+	}
 
 	/**
 	 * This function is called periodically during operator control.
