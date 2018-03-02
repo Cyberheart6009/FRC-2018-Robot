@@ -219,8 +219,6 @@ public class Robot extends IterativeRobot {
 	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
-		//leftChassis.set(0.1);
-		//rightChassis.set(0.1);
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
 		aButton = driver.getRawButton(1);
