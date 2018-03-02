@@ -72,10 +72,10 @@ public class Robot extends IterativeRobot {
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevatorOne, elevatorTwo, climberOne, climberTwo;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator, climberOne, climberTwo, gripperOne, gripperTwo;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, climberGroup;
+	SpeedControllerGroup leftChassis, rightChassis, climberGroup, gripperGroup;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
@@ -88,7 +88,7 @@ public class Robot extends IterativeRobot {
 	Joystick operator;
 	
 	//Boolean for buttons
-	boolean aButton, bButton, xButton, yButton;
+	boolean aButton, bButton, xButton, yButton, aButtonOp, bButtonOp, xButtonOp, yButtonOp;
 	
 	// Analog Sensors
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
@@ -127,8 +127,13 @@ public class Robot extends IterativeRobot {
 		rightBack = new Spark(3);
 		climberOne = new Spark(4);
 		climberTwo = new Spark(5);
-		elevatorOne = new Spark(6);
-		elevatorTwo = new Spark(7);
+		elevator = new Spark(6);
+		gripperOne = new Spark(7);
+		gripperTwo = new Spark(8);
+		
+		//Inverting Sparks
+		elevator.setInverted(true);
+		gripperTwo.setInverted(true);
 		
 		// Defines Joystick ports
 		driver = new Joystick(0);
@@ -143,8 +148,8 @@ public class Robot extends IterativeRobot {
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
-		elevatorGroup = new SpeedControllerGroup(elevatorOne, elevatorTwo);
 		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
+		gripperGroup = new SpeedControllerGroup(gripperOne, gripperTwo);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
@@ -243,6 +248,12 @@ public class Robot extends IterativeRobot {
 		xButton = driver.getRawButton(3);
 		yButton = driver.getRawButton(4);
 		
+		aButtonOp = driver.getRawButton(1);
+		bButtonOp = driver.getRawButton(2);
+		xButtonOp = driver.getRawButton(3);
+		yButtonOp = driver.getRawButton(4);
+
+		
 		if (xButton) {
 			//System.out.print(androidData());
 			elevatorEncoder.reset();
@@ -250,15 +261,25 @@ public class Robot extends IterativeRobot {
 			gyroscope.reset();
 		} 
 		
+		if (aButtonOp) {
+			gripperGroup.set(0.3);
+		} 
+		else if (bButtonOp) {
+			gripperGroup.set(-0.3);
+		}
+		else {
+			gripperGroup.set(0);
+		}
+		
 		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
-			elevatorGroup.set(operator.getRawAxis(5));
+			elevator.set(operator.getRawAxis(5));
 		}
 		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(5) > 0)) { 
- 			elevatorGroup.set(0);
+ 			elevator.set(0);
  			System.out.println("UP ELEVATOR limit Switct being pressed while DOWN Joystick is pressed");
  		}
 		if (!limitSwitchDownElevator.get() & (operator.getRawAxis(5) < 0)) { 
- 			elevatorGroup.set(0);
+ 			elevator.set(0);
  			System.out.println("DOWN ELEVATOR limit Switct being pressed while UP Joystick is pressed");
  		}
 		//else {
