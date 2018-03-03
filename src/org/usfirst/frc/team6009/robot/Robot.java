@@ -248,10 +248,10 @@ public class Robot extends IterativeRobot {
 		xButton = driver.getRawButton(3);
 		yButton = driver.getRawButton(4);
 		
-		aButtonOp = driver.getRawButton(1);
-		bButtonOp = driver.getRawButton(2);
-		xButtonOp = driver.getRawButton(3);
-		yButtonOp = driver.getRawButton(4);
+		aButtonOp = operator.getRawButton(1);
+		bButtonOp = operator.getRawButton(2);
+		xButtonOp = operator.getRawButton(3);
+		yButtonOp = operator.getRawButton(4);
 
 		
 		if (xButton) {
@@ -262,45 +262,45 @@ public class Robot extends IterativeRobot {
 		} 
 		
 		if (aButtonOp) {
-			gripperGroup.set(0.3);
+			gripperGroup.set(1);
 		} 
 		else if (bButtonOp) {
-			gripperGroup.set(-0.3);
+			gripperGroup.set(-1);
 		}
 		else {
 			gripperGroup.set(0);
 		}
 		
 		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
-			elevator.set(operator.getRawAxis(5));
+			elevator.set(-operator.getRawAxis(1));
 		}
-		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(5) > 0)) { 
+		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(1) > 0)) { 
  			elevator.set(0);
  			System.out.println("UP ELEVATOR limit Switct being pressed while DOWN Joystick is pressed");
  		}
-		if (!limitSwitchDownElevator.get() & (operator.getRawAxis(5) < 0)) { 
+		if (!limitSwitchDownElevator.get() & (operator.getRawAxis(1) < 0)) { 
  			elevator.set(0);
  			System.out.println("DOWN ELEVATOR limit Switct being pressed while UP Joystick is pressed");
  		}
 		//else {
 			//elevatorGroup.set(0);
 		//}
- 			
+ 			/*
 		if (limitSwitchUpClimber.get() & limitSwitchDownClimber.get()) {
-			climberGroup.set(operator.getRawAxis(1));
+			climberGroup.set(operator.getRawAxis(5));
 		}
 		
-		if (!limitSwitchUpClimber.get() & (operator.getRawAxis(1) > 0)) { 
+		if (!limitSwitchUpClimber.get() & (operator.getRawAxis(5) > 0)) { 
  			climberGroup.set(0);
  			System.out.println("UP CLIMBER limit Switct being pressed while DOWN Joystick is pressed");	
  		}
-		if (!limitSwitchDownClimber.get() & (operator.getRawAxis(1) < 0)) {
+		if (!limitSwitchDownClimber.get() & (operator.getRawAxis(5) < 0)) {
 			climberGroup.set(0);
  			System.out.println("DOWN CLIMBER limit Switct being pressed while UP Joystick is pressed");	
  		}
 		//else {
 			//climberGroup.set(0); 
-		//}
+		//}*/
 
 		updateSmartDashboard();
 	}
