@@ -78,9 +78,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
+	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 213.9;
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, climber1, climber2, elevator1, elevator2, gripper1, gripper2;
+	SpeedController leftFront, leftBack, rightFront, rightBack, climberOne, climberTwo, elevator, gripperOne, gripperTwo;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, climberGroup, gripperGroup;
@@ -102,7 +103,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	Solenoid ultra_solenoid;
 	
 	// Encoders
-	Encoder leftEncoder, rightEncoder, leftElevator, rightElevator;
+	Encoder leftEncoder, rightEncoder, elevatorEncoder;
 	
 	// Gyro
 	//ADXRS450_Gyro gyroscope;
@@ -164,12 +165,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
-		climber1 = new Spark(4);
-		climber2 = new Spark(5);
-		elevator1 = new Spark(6);
-		elevator2 = new Spark(7);
-		gripper1 = new Spark(8);
-		gripper2 = new Spark(9);
+		climberOne = new Spark(4);
+		climberTwo = new Spark(5);
+		elevator = new Spark(6);
+		gripperOne = new Spark(7);
+		gripperTwo = new Spark(8);
 		
 		//Creating the Joystick object
 		driver = new Joystick(0);
@@ -177,9 +177,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
-		elevatorGroup = new SpeedControllerGroup(elevator1, elevator2);
-		climberGroup = new SpeedControllerGroup(climber1, climber2);
-		gripperGroup = new SpeedControllerGroup(gripper1, gripper2);
+		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
+		gripperGroup = new SpeedControllerGroup(gripperOne, gripperTwo);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
@@ -196,6 +195,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
 		rightEncoder = new Encoder(2,3);
+		elevatorEncoder = new Encoder(8,9);
 		//leftElevator = new Encoder(4, 5);
 		//rightElevator = new Encoder(6, 7);
 		
@@ -596,12 +596,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						}
 						break;
 					case Turn2:
-						rotationPID.setSetpoint(0);
-						rotationPID.setEnabled(true);
-						leftChassis.set(rotationPID.get());
-						rightChassis.set(-rotationPID.get());
-						timerStart = System.currentTimeMillis();
-						autoStep = Step.Straight3;
+						if (turnInPlace(0)) {
+						  	resetEncoders();
+							autoStep = Step.Straight;
+							rotationPID.setEnabled(false);
+							System.out.println("Turned Left");
+						}
 						break;
 					case Straight3:
 						int height1 = 0; //remove this after an actual elevator height equation is created
@@ -756,6 +756,34 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}
 	}
 	
+	public boolean elevatorAscend(double height, double speed) {
+		System.out.println("elevatorClimbHeight()");
+		if (getElevatorHeight() < height){
+			elevator.set(speed);
+			return false;
+		}
+		else {
+			System.out.println("Elevator Has Ascended");
+			stop();
+			resetEncoders();
+			return true;
+		}
+	}
+	
+	public boolean elevatorDescend(double height, double speed) {
+		System.out.println("elevatorClimbHeight()");
+		if (getElevatorHeight() < height){
+			elevator.set(speed);
+			return false;
+		}
+		else {
+			System.out.println("Elevator Has Ascended");
+			stop();
+			resetEncoders();
+			return true;
+		}
+	}
+	
 	public void squareDrive() {
 		switch (squareStep){
 		case 0:
@@ -780,8 +808,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rightEncoder.reset();
 	}
 	
-	public double getElevatorheight(){
-		return ((double)(leftElevator.get() + rightElevator.get()) / (ENCODER_COUNTS_PER_INCH * 2));
+	public double getElevatorHeight(){
+		return ((double)(elevatorEncoder.get() / (ELEVATOR_ENCODER_COUNTS_PER_INCH * 2)));
 	}
 	
 	public double getDistance(){
