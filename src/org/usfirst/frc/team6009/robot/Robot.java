@@ -359,8 +359,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					resetEncoders();
 					if (autoSelected == leftSwitchSwitch) {
 						if (height < 0) {
-							elevator1.set(-0.3);
-						 	elevator2.set(-0.3);
+							elevator1.set(-0.1);
+						 	elevator2.set(-0.1);
 						}
 						else {
 							stopElevator();
@@ -384,8 +384,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					}
 					else {
 						if (height < 0) {
-							elevator1.set(-0.3);
-							elevator2.set(-0.3);
+							elevator1.set(-0.1);
+							elevator2.set(-0.1);
 						}
 						else {
 							stopElevator();
@@ -551,7 +551,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	private void PIDTurn(double setpoint) {
 		resetEncoders();
-		gyroscope.reset();
 		rotationPID.setSetpoint(setpoint);
 		rotationPID.setEnabled(true);
 		leftChassis.set(rotationPID.get());
