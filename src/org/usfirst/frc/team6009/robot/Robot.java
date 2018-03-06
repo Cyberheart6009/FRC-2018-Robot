@@ -571,33 +571,29 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				switch (autoStep) {
 				case Straight:
 					resetEncoders();
-					driveStraight(0, 0.4);
-					if (getDistance() <= 70) {
-						stop();
+					if (driveDistanceStraight(70,0.3)){
+						autoStep = Step.Turn2;
+						System.out.println("Moved Straight");
 					}
-					timerStart = System.currentTimeMillis();
-					autoStep = Step.Turn;
 					break;
 				}
 				if (gameData.charAt(0) == 'L') {
 					// TODO Insert Code to pick up box and move to the left side of the scale
 					switch (autoStep) {
 					case Turn:
-						rotationPID.setSetpoint(-90);
-						rotationPID.setEnabled(true);
-						leftChassis.set(rotationPID.get());
-						rightChassis.set(-rotationPID.get());
-						timerStart = System.currentTimeMillis();
-						autoStep = Step.Straight2;
+						if (turnInPlace(90)) {
+						  	resetEncoders();
+							autoStep = Step.Straight;
+							rotationPID.setEnabled(false);
+							System.out.println("Turned Right");
+						}
 						break;
 					case Straight2:
 						resetEncoders();
-						driveStraight(0, 0.4);
-						if (getDistance() >= 59) {
-							stop();
+						if (driveDistanceStraight(59,0.3)){
+							autoStep = Step.Turn2;
+							System.out.println("Moved Straight");
 						}
-						timerStart = System.currentTimeMillis();
-						autoStep = Step.Turn2;
 						break;
 					case Turn2:
 						rotationPID.setSetpoint(0);
