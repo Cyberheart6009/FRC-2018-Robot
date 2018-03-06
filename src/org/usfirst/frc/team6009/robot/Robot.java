@@ -213,6 +213,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		if (autoSelected.equalsIgnoreCase(square)) {
 			switch (autoStep) {
 				case Straight:
+					rotationPID.setEnabled(false);
 					if (getDistance() < 24) {
 						driveStraight(0, 0.3);
 						System.out.println("Going Straight");
@@ -254,20 +255,22 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					break;
 				case Turn: 
 					if (autoSelected == leftSwitchSwitch){
-						PIDTurn(90);
-						autoStep = Step.Straight2;
-						/*rotationPID.setSetpoint(90);
-						rotationPID.setEnabled(true);
-						leftChassis.set(rotationPID.get());
-						rightChassis.set(-rotationPID.get());*/
+						if (gyroscope.getAngle >= (90 - 2) && gyroscope.getAngle <= (90 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(90);
+						}
 					}
 					else {
-						PIDTurn(-90);
-						autoStep = Step.Straight2;
-						/*rotationPID.setSetpoint(-90);
-						rotationPID.setEnabled(true);
-						leftChassis.set(rotationPID.get());
-						rightChassis.set(-rotationPID.get());*/
+						if (gyroscope.getAngle >= (-90 - 2) && gyroscope.getAngle <= (-90 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(-90);
+						}
 					}
 					break;
 				case Straight2:
@@ -296,20 +299,24 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					break;
 				case Turn2:
 					if (autoSelected == leftSwitchSwitch) {
-						PIDTurn(180);
+						if (gyroscope.getAngle >= (180 - 2) && gyroscope.getAngle <= (180 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(180);
+						}
 						autoStep = Step.Straight3;
-						/*rotationPID.setSetpoint(180);
-						rotationPID.setEnabled(true);
-						leftChassis.set(rotationPID.get());
-						rightChassis.set(-rotationPID.get());*/
 					}
 					else {
-						PIDTurn(-180);
+						if (gyroscope.getAngle >= (-180 - 2) && gyroscope.getAngle <= (-180 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(-180);
+						}
 						autoStep = Step.Straight3;
-						/*rotationPID.setSetpoint(-180);
-						rotationPID.setEnabled(true);
-						leftChassis.set(rotationPID.get());
-						rightChassis.set(-rotationPID.get());*/
 					}
 					break;
 				case Straight3:
@@ -555,7 +562,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rotationPID.setEnabled(true);
 		leftChassis.set(rotationPID.get());
 		rightChassis.set(-rotationPID.get());
-		rotationPID.setEnabled(false);
 	}
 	
 	private void driveStraight(double heading, double speed) {
