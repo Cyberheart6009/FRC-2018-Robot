@@ -61,7 +61,8 @@ public class Robot extends IterativeRobot {
 	
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
-	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 1;
+	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
+	final static double DEGREES_PER_PIXEL = 0.254;
 	double currentSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
@@ -241,8 +242,9 @@ public class Robot extends IterativeRobot {
 	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
-		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
+		chassis.arcadeDrive(driver.getX(), -driver.getY());
+		//tipPrevention();
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
@@ -253,6 +255,7 @@ public class Robot extends IterativeRobot {
 		xButtonOp = operator.getRawButton(3);
 		yButtonOp = operator.getRawButton(4);
 
+		System.out.println(gyroscope.getPitch());
 		
 		if (xButton) {
 			//System.out.print(androidData());
@@ -260,6 +263,10 @@ public class Robot extends IterativeRobot {
 			resetEncoders();
 			gyroscope.reset();
 		} 
+		
+		if (aButton){
+			turnToBox();
+		}
 		
 		if (aButtonOp) {
 			gripperGroup.set(1);
@@ -270,6 +277,7 @@ public class Robot extends IterativeRobot {
 		else {
 			gripperGroup.set(0);
 		}
+		
 		
 		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
 			elevator.set(-operator.getRawAxis(1));
@@ -334,6 +342,10 @@ public class Robot extends IterativeRobot {
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
 	
+	private double getElevatorHeight(){
+		return (double)(elevatorEncoder.get()/ELEVATOR_ENCODER_COUNTS_PER_INCH);
+	}
+	
 	// Calculates and returns the distance from the Yellow Ultrasonic Distance Sensor
 	public double getUltrasonicYellowDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
@@ -357,34 +369,79 @@ public class Robot extends IterativeRobot {
 	}
 
 	
-	public String androidData(){
+	private double androidData(){
+		double Center_X = 0;
 		String box_data = RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S");
-		String[] split_data = box_data.split("\n");
+		String[] seperated_data = box_data.split("\n");
 		// if split_data = 1 that means there was no line break & therefore no data
 		
-		if (split_data.length == 1){
+		if (seperated_data.length == 1){
 			box_position = "NO DATA";
 		}
 		else{	// if the length of the split array is longer than 1 then 
-			box_position = split_data[(split_data.length-1)];
-			
+			box_position = seperated_data[(seperated_data.length-1)];
+			String[] splitted;
+	        double[] final_array = new double[4];
+	        String[] split_data = box_data.split(",");
+	        
+	        if (split_data.length != 4){
+	        	Center_X = 0;
+	            //System.out.println("Invalid");
+	        }
+	        else{
+	            for (int i=0; i<split_data.length; i++){
+	                if (i == 0){
+	                    splitted = split_data[0].split(" ");
+	                    final_array[0] = Double.parseDouble(splitted[splitted.length-1]);
+	                }
+	                else if(i == 3){
+	                    splitted = split_data[3].split(" ");
+	                    final_array[3] = Double.parseDouble(splitted[0]);
+	                }
+	                else{
+	                    final_array[i] = Double.parseDouble(split_data[i]);
+	                }
+	            }
+	            for (int x=0; x<final_array.length; x++){
+	                System.out.println(final_array[x]);
+	            }
+	            Center_X = (final_array[3]+final_array[1])/2;
+	        }
 		}
-		
-		//box_position = box_data;
-		//box_position = split_data[(split_data.length-1)];
-		
-		return box_position;
+		System.out.println("Center x: " + Center_X);
+		return Center_X;
 	}
-	/*
+	
+	private void turnToBox(){
+		double Center_X = androidData();
+		double degreeOffset = (120 - Center_X)*DEGREES_PER_PIXEL;
+		
+		
+		if (Center_X > 120){
+			while (!turnLeft(degreeOffset)){
+				stop();
+			}
+		}
+		if (Center_X < 120){
+			while (!turnRight(degreeOffset)){
+				stop();
+			}
+		}
+		else{
+			stop();
+		}
+	}
+	
 	private void tipPrevention(){
-		if(zangle > 15deg){
-			// Full reverse
+		if (gyroscope.getPitch() > 10){
+			leftChassis.set(0.5);
+			rightChassis.set(0.5);
 		}
-		if (zangle < -15deg){
-			// Full forward
+		if (gyroscope.getPitch() < -10){
+			leftChassis.set(-0.5);
+			rightChassis.set(-0.5);
 		}
-		 
-	}*/
+	}
 	
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
@@ -437,7 +494,19 @@ public class Robot extends IterativeRobot {
 		}
 		return false;
 	}
+	private boolean turnLeft(double targetAngle){
+		// We want to turn in place to 60 degrees 
+		leftBack.set(-0.35);
+		leftFront.set(-0.35);
+		rightBack.set(-0.35);
+		rightFront.set(-0.35);
 
+		double currentAngle = gyroscope.getAngle();
+		if (currentAngle <= targetAngle + 2){
+			return true;
+		}
+		return false;
+	}
 	// Pushes all data the Smart Dashboard when called
 	private void updateSmartDashboard() {
 		SmartDashboard.putData("Gyro", gyroscope);
@@ -451,7 +520,7 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
-		SmartDashboard.putNumber("Elevator Encoder Counts", elevatorEncoder.get());
+		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
 		
 		SmartDashboard.putNumber("Robot Speed", robotSpeed());
 		
