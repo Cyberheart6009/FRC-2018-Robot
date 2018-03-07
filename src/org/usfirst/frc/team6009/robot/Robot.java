@@ -60,7 +60,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	// Constant defining encoder turns per inch of robot travel
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	//Constant defining encoder turn for the elevator lifting
-	final static double ENCODER_COUNTS_PER_INCH_HEIGHT = 213.9;
+	final static double ENCODER_COUNTS_PER_INCH_HEIGHT = 182.13;
+	//ENCODER_COUNTS_PER_INCH_HEIGHT = 213.9
 	
 	// Auto Modes Setup
 	String gameData;
@@ -213,6 +214,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		if (autoSelected.equalsIgnoreCase(square)) {
 			switch (autoStep) {
 				case Straight:
+					gyroscope.reset();
 					rotationPID.setEnabled(false);
 					if (getDistance() < 24) {
 						driveStraight(0, 0.3);
@@ -226,14 +228,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					}
 					break;
 				case Turn:
-					PIDTurn(90);
-					/*resetEncoders();
-					gyroscope.reset();
-					rotationPID.setSetpoint(90);
-					rotationPID.setEnabled(true);
-					leftChassis.set(rotationPID.get());
-					rightChassis.set(-rotationPID.get());
-					rotationPID.setEnabled(false);*/
+					if (gyroscope.getAngle >= (90 - 2) && gyroscope.getAngle <= (90 + 2) ){
+						rotationPID.setEnabled(false);
+						autoStep = Step.Straight2;
+					}
+					else {
+						PIDTurn(90);
+					}
 					autoStep = Step.Straight;
 					break;
 				case Done:
