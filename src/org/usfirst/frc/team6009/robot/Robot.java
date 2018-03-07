@@ -55,40 +55,45 @@ import com.kauailabs.navx.frc.AHRS;
 
 public class Robot extends IterativeRobot implements PIDOutput {
 	
-	double rotateToAngleRate;
-	
 	// Constant defining encoder turns per inch of robot travel
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	//Constant defining encoder turn for the elevator lifting
-	final static double ENCODER_COUNTS_PER_INCH_HEIGHT = 213.9;
+	final static double ENCODER_COUNTS_PER_INCH_HEIGHT = 182.13;
+	//ENCODER_COUNTS_PER_INCH_HEIGHT = 213.9
 	
 	// Auto Modes Setup
 	String gameData;
-	private static final String kDefaultAuto = "Default";
-	private static final String kCustomAuto = "My Auto";
-    final String leftSwitch = "left Switch";
-    final String leftSwitchSwitch = "left Switch Switch";
-    final String rightSwitchSwitch = "right Switch Switch";
-    final String square = "square";
-	String autoSelected;
-	SendableChooser<String> chooser;
+	
+	//Starting positions
+	SendableChooser<String> positionChooser;
+	final String left = "left";
+	final String right = "right";
+	final String center = "center";
+	
+	//what the robot does
+	SendableChooser<String> movementChooser;
+	final String Switch = "Switch";
+	final String SwitchSwitch = "SwitchSwitch";
+	final String Scale = "Scale";
+	final String ScaleSwitch = "ScaleSwitch";
+	final String SwitchScale = "SwitchScale";
+	final String Portal = "Portal";
+	
+    String positionSelected;
+	String movementSelected;
 	
 	//auto cases
 		public enum Step { Straight, Turn, Straight2, Turn2, Straight3, CubeOut, CubeIn, CubeOut2,  Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
-		
-	// Analog Sensors
-	AnalogInput ultrasonic_yellow, ultrasonic_black;
-	Solenoid ultra_solenoid;
-	
+
 	//Limit Switches
 	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber, limitSwitchGripper;
 
     SpeedController leftFront, leftBack, rightFront, rightBack, gripper1, gripper2, elevator1, elevator2, climber1, climber2, PIDSpeed;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis;
+	SpeedControllerGroup leftChassis, rightChassis, elevator, gripper;
 	
 	Encoder leftEncoder, rightEncoder, leftElevator, rightElevator;
 	
@@ -118,16 +123,24 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void robotInit() {
-		// Adds all of our previously created auto modes into the smartdashboard chooser
-		chooser.addDefault("Default Auto", kDefaultAuto);
-		chooser.addObject("My Auto", kCustomAuto);
+		//Chooser for the starting position
+		positionChooser = new SendableChooser<String>();
+		positionChooser.addObject("left", left);
+		positionChooser.addObject("right", right);
+		positionChooser.addObject("center", center);
 		
-		chooser = new SendableChooser<String>();
-		chooser.addObject("left Switch", leftSwitch);
-		chooser.addObject("left Switch Switch", leftSwitchSwitch);
-		chooser.addObject("right Switch Switch", rightSwitchSwitch);
-		chooser.addObject("square", square);
-		SmartDashboard.putData("Auto choices", chooser);
+		//Chooser for the movement of the robot
+		movementChooser = new SendableChooser<String>();
+		movementChooser.addObject("Switch", Switch);
+		movementChooser.addObject("SwitchSwitch", SwitchSwitch);
+		movementChooser.addObject("Scale", Scale);
+		movementChooser.addObject("ScaleSwitch", ScaleSwitch);
+		movementChooser.addObject("SwitchScale", SwitchScale);
+		movementChooser.addObject("Portal", Portal);
+		
+		//Display these choices in whatever interface we are using
+		SmartDashboard.putData("Robot Position", positionChooser);
+		SmartDashboard.putData("Movement Type", movementChooser);
 		
 		limitSwitchUpElevator = new DigitalInput(4);
 		limitSwitchDownElevator =  new DigitalInput(5);
@@ -141,6 +154,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		climber2 = new Spark(5);
 		gripper1 = new Spark(8);
 		gripper2 = new Spark(9);
+		
+		elevator = new SpeedControllerGroup(elevator1, elevator2);
+		gripper = new SpeedControllerGroup(gripper1, gripper2);
 		
 		//leftElevator = new Encoder(4, 5);
 		//rightElevator = new Encoder(6, 7);
@@ -173,11 +189,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rotationPID = new PIDController(Kp, Ki, Kd, gyroscope, this);
 		rotationPID.setSetpoint(0);
 		
-		// Set up port for Ultrasonic Distance Sensor
-		ultrasonic_yellow = new AnalogInput(0);
-		ultrasonic_black = new AnalogInput(1);
-		ultra_solenoid = new Solenoid(0);
-		
 	}
 	
 	
@@ -196,11 +207,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void autonomousInit() {
-		autoSelected = (String)chooser.getSelected();
-		System.out.println("Auto selected: " + autoSelected);
+		//Assign selected modes to a variable
+		positionSelected = positionChooser.getSelected();
+		movementSelected = movementChooser.getSelected();
+		System.out.println("Position Selected: " + positionSelected);
+		System.out.println("Movement Selected" + movementSelected);
+		//Get Orientation of scale and store it in gameData
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		gyroscope.reset();  // Reset the gyro so the heading at the start of the match is 0
-	}
+		//Reset the gyro so the heading at the start of the match is 0
+		resetEncoders();
+		autoStep = Step.Straight;
+		gyroscope.reset();	}
 	
 
 	/**
@@ -210,233 +227,106 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void autonomousPeriodic() {
 		double distance = getDistance();
 		double height = getElevatorheight();
-		if (autoSelected.equalsIgnoreCase(square)) {
-			switch (autoStep) {
-				case Straight:
-					rotationPID.setEnabled(false);
-					if (getDistance() < 24) {
-						driveStraight(0, 0.3);
-						System.out.println("Going Straight");
+		if (positionSelected.equalsIgnoreCase(left)) {
+			if (movementSelected.equalsIgnoreCase(Switch)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(SwitchSwitch)) {
+				if (gameData.length() > 0) {
+					if (gameData.charAt(0) == 'L') {
+						System.out.println("leftSwitchSwitch1/2");
+						switch (autoStep) {
+						case Straight:
+							if (distance < 220) {
+								driveStraight(0, 0.4);
+							}
+							else {
+								stop();
+								autoStep = Step.Turn;
+							}
+							break;
+						case Turn: 
+							if (turnInPlace(90)) {
+							  	resetEncoders();
+								rotationPID.setEnabled(false);
+								autoStep = Step.Straight;
+							}
+							break;
+						case Straight2:
+							if (distance < 50) {
+								driveStraight(90, 0.4);
+							}
+							else {
+								stop();
+								autoStep = Step.Turn2;
+							}
+							break;
+						case Turn2:
+							if (turnInPlace(180)) {
+								resetEncoders();
+								rotationPID.setEnabled(false);
+								autoStep = Step.CubeOut;
+							}
+							break;
+						case CubeOut:
+							if (height < 40) {
+								elevator.set(0.3);
+							} else {
+								if (!limitSwitchGripper.get()) {
+									completeStop();
+									autoStep = Step.CubeIn;
+								} else {
+									gripper.set(0.5);
+								}
+							}
+							break;
+						case CubeIn:
+							if (distance < 24){
+								driveStraight(180, 0.4);
+								gripper.set(-0.5);
+							}
+							else {
+								completeStop();
+								autoStep = Step.CubeOut2;
+							}
+							break;			
+						case CubeOut2:
+							if (height < 40) {
+								elevator.set(0.3);
+							} else {
+								if (!limitSwitchGripper.get()) {
+									completeStop();
+									autoStep = Step.Done;
+								} else {
+									gripper.set(0.5);
+								}
+							}
+							break;
+						case Done:
+							completeStop();
+							break;
+						}
+					} else {
+						System.out.println("leftSwitchSwitch3/4");
+						
 					}
-					else {
-						stop();
-						resetEncoders();
-						autoStep = Step.Turn;
-						System.out.println("Encoders Reset!");
-					}
-					break;
-				case Turn:
-					PIDTurn(90);
-					/*resetEncoders();
-					gyroscope.reset();
-					rotationPID.setSetpoint(90);
-					rotationPID.setEnabled(true);
-					leftChassis.set(rotationPID.get());
-					rightChassis.set(-rotationPID.get());
-					rotationPID.setEnabled(false);*/
-					autoStep = Step.Straight;
-					break;
-				case Done:
-					stop();
-					break;
 				}
-		}
-		if (autoSelected.equalsIgnoreCase(leftSwitchSwitch) || autoSelected.equalsIgnoreCase(rightSwitchSwitch)) {
-			switch (autoStep) {
-				case Straight:
-					resetEncoders();
-					if (distance < 220) {
-						driveStraight(0, 0.4);
-					}
-					else {
-						stop();
-						autoStep = Step.Turn;
-					}
-					break;
-				case Turn: 
-					if (autoSelected == leftSwitchSwitch){
-						if (gyroscope.getAngle >= (90 - 2) && gyroscope.getAngle <= (90 + 2) ){
-							rotationPID.setEnabled(false);
-							autoStep = Step.Straight2;
-						}
-						else {
-							PIDTurn(90);
-						}
-					}
-					else {
-						if (gyroscope.getAngle >= (-90 - 2) && gyroscope.getAngle <= (-90 + 2) ){
-							rotationPID.setEnabled(false);
-							autoStep = Step.Straight2;
-						}
-						else {
-							PIDTurn(-90);
-						}
-					}
-					break;
-				case Straight2:
-					if (autoSelected == leftSwitchSwitch) {
-						rotationPID.setEnabled(false);
-						resetEncoders();
-						if (distance < 45.5) {
-							driveStraight(90, 0.4);
-						}
-						else {
-							stop();
-							autoStep = Step.Turn2;
-						}
-					}
-					else {
-						rotationPID.setEnabled(false);
-						resetEncoders();
-						if (distance < 45.5) {
-							driveStraight(-90, 0.4);
-						}
-						else {
-							stop();
-							autoStep = Step.Turn2;
-						}
-					}
-					break;
-				case Turn2:
-					if (autoSelected == leftSwitchSwitch) {
-						if (gyroscope.getAngle >= (180 - 2) && gyroscope.getAngle <= (180 + 2) ){
-							rotationPID.setEnabled(false);
-							autoStep = Step.Straight2;
-						}
-						else {
-							PIDTurn(180);
-						}
-						autoStep = Step.Straight3;
-					}
-					else {
-						if (gyroscope.getAngle >= (-180 - 2) && gyroscope.getAngle <= (-180 + 2) ){
-							rotationPID.setEnabled(false);
-							autoStep = Step.Straight2;
-						}
-						else {
-							PIDTurn(-180);
-						}
-						autoStep = Step.Straight3;
-					}
-					break;
-				case Straight3:
-					/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
-					in regards to our robot so using the tracking will make sure we are in line with the cube*/
-					if (autoSelected == leftSwitchSwitch) {
-						rotationPID.setEnabled(false);
-						resetEncoders();
-						if (distance < 11){
-							driveStraight(180, 0.4);
-						}
-						else {
-							stop();
-							autoStep = Step.CubeOut;
-						}
-					}
-					else {
-						rotationPID.setEnabled(false);
-						resetEncoders();
-						if (distance < 11){
-						driveStraight(-180, 0.4);
-						}
-						else {
-							stop();
-							autoStep = Step.CubeOut;
-						}
-					}
-					break;
-				case CubeOut:
-					if (height < 40) {
-						elevator1.set(0.3);
-						elevator2.set(0.3);
-					}
-					else {
-						stopElevator();
-					}
-					/*gripper1.set(0.3);	
-					gripper2.set(0.3);
-					if (!limitSwitchGripper.get()) {
-						gripper1.set(0);
-						gripper2.set(0);
-					}*/
-					autoStep = Step.CubeIn;
-					break;
-				case CubeIn:
-					rotationPID.setEnabled(false);
-					resetEncoders();
-					if (autoSelected == leftSwitchSwitch) {
-						if (height < 0) {
-							elevator1.set(-0.1);
-						 	elevator2.set(-0.1);
-						}
-						else {
-							stopElevator();
-						}
-						if (limitSwitchDownElevator.get()) {
-							stopElevator();
-						}
-						if (distance < 13) {
-							driveStraight(180, 0.4);
-						}
-						else {
-							stop();
-						}
-						/*gripper1.set(-0.3);
-						gripper2.set(-0.3);
-						if (limitSwitchGripper.get()) {
-							gripper1.set(0);
-							gripper2.set(0);
-						}*/
-						autoStep = Step.CubeOut2;
-					}
-					else {
-						if (height < 0) {
-							elevator1.set(-0.1);
-							elevator2.set(-0.1);
-						}
-						else {
-							stopElevator();
-						}
-						if (limitSwitchDownElevator.get()) {
-							stopElevator();
-						}
-						if (distance < 13) {
-							driveStraight(-180, 0.4);
-						}
-						else {
-							stop();
-						}
-						/*gripper1.set(-0.3);
-						gripper2.set(-0.3);
-						if (limitSwitchGripper.get()) {
-							gripper1.set(0);
-							gripper2.set(0);
-						}*/
-						autoStep = Step.CubeOut2;
-					}
-					break;
-				case CubeOut2:
-					if (height < 40) {
-						elevator1.set(0.3);
-						elevator2.set(0.3);
-					}
-					else {
-						stopElevator();
-					}
-					/*gripper1.set(0.3);
-					gripper2.set(0.3);
-					if (!limitSwitchGripper.get()) {
-						gripper1.set(0);
-						gripper2.set(0);
-					}*/
-					autoStep = Step.Done;
-					break;
-				case Done:
-					stop();
-					stopElevator();
-					stopGripper();
-					break;
+			} else if (movementSelected.equalsIgnoreCase(Scale)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(ScaleSwitch)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(SwitchScale)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(Portal)) {
+				
+			} else {
+				completeStop();
 			}
+		} else if (positionSelected.equalsIgnoreCase(right)) {
+			
+		} else if (positionSelected.equalsIgnoreCase(center)){
+			
+		} else {
+			completeStop();
 		}
 		
 	}
@@ -446,8 +336,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void teleopPeriodic() {
-		
-		ultra_solenoid.set(true);
 		
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
@@ -546,22 +434,26 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
 	
-	public double getUltrasonicYellowDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
-	}
-
-	public double getUltrasonicBlackDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
-	}
-	
 	private void PIDTurn(double setpoint) {
 		resetEncoders();
 		rotationPID.setSetpoint(setpoint);
 		rotationPID.setEnabled(true);
 		leftChassis.set(rotationPID.get());
 		rightChassis.set(-rotationPID.get());
+	}
+	
+	public boolean turnInPlace(double setPoint) {
+		/* FIXME Setpoint is currently required to be exact, implement a range*/
+		if (gyroscope.getAngle() >= (setPoint - 2) && gyroscope.getAngle() <= (setPoint + 2)) {
+			return true;
+		} else {
+			rotationPID.setSetpoint(setPoint);
+			rotationPID.setEnabled(true);
+			leftChassis.set(rotationPID.get());
+			rightChassis.set(-rotationPID.get());
+			return false;
+		}
+		
 	}
 	
 	private void driveStraight(double heading, double speed) {
@@ -630,70 +522,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		gripper1.set(0);
 		gripper2.set(0);
 	}
+	private void completeStop() {
+		stop();
+		stopElevator();
+		stopGripper();
+	}
 	
 	@Override
 	   /*This function is invoked periodically by the PID Controller, */
 	  /* based upon navX-MXP yaw angle input and PID Coefficients.    */
 	  public void pidWrite(double output) {
-	      rotateToAngleRate = output;
+	      
 	  }
 	
 }
-/*case Straight2:
-resetEncoders();
-driveStraight(90, 0.3);
-if (distance > 10) {
-	stop();
-}
-timerStart = System.currentTimeMillis();
-autoStep = Step.Turn2;
-break;
-case Turn2:
-rotationPID.setEnabled(true);
-rotationPID.setSetpoint(180);
-leftChassis.set(rotationPID.get());
-rightChassis.set(-rotationPID.get());
-rotationPID.setEnabled(false);
-
-timerStart = System.currentTimeMillis();
-autoStep = Step.Straight3;
-break;
-case Straight3:
-resetEncoders();
-driveStraight(180, 0.3);
-if (distance > 10) {
-	stop();
-}
-timerStart = System.currentTimeMillis();
-autoStep = Step.Turn3;
-break;
-case Turn3:
-rotationPID.setEnabled(true);
-rotationPID.setSetpoint(270);
-leftChassis.set(rotationPID.get());
-rightChassis.set(-rotationPID.get());
-rotationPID.setEnabled(false);
-
-timerStart = System.currentTimeMillis();
-autoStep = Step.Straight4;
-break;
-case Straight4:
-resetEncoders();
-driveStraight(270, 0.3);
-if (distance > 10) {
-	stop();
-}
-timerStart = System.currentTimeMillis();
-autoStep = Step.Turn4;
-break;
-case Turn4:
-rotationPID.setEnabled(true);
-rotationPID.setSetpoint(0);
-leftChassis.set(rotationPID.get());
-rightChassis.set(-rotationPID.get());
-rotationPID.setEnabled(false);
-
-timerStart = System.currentTimeMillis();
-autoStep = Step.Done;
-break;*/
-
