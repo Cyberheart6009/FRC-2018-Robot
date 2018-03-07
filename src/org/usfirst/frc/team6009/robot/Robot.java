@@ -182,11 +182,11 @@ public class Robot extends IterativeRobot {
 			
 			System.out.println("Begin ADB Tests");
 			System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
-			System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
+			//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
 			System.out.println("logcat done");
 		}
 		else{
-			System.out.println("RAN INIT");
+			System.out.println("ADB INIT NOT RAN");
 		}
 	}
 	
@@ -255,7 +255,8 @@ public class Robot extends IterativeRobot {
 		xButtonOp = operator.getRawButton(3);
 		yButtonOp = operator.getRawButton(4);
 
-		System.out.println(gyroscope.getPitch());
+		// debug for tipPrevention
+		//System.out.println(gyroscope.getPitch());
 		
 		if (xButton) {
 			//System.out.print(androidData());
@@ -368,13 +369,11 @@ public class Robot extends IterativeRobot {
 		return (double) currentSpeed;
 	}
 
-	
 	private double androidData(){
 		double Center_X = 0;
 		String box_data = RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S");
 		String[] seperated_data = box_data.split("\n");
-		// if split_data = 1 that means there was no line break & therefore no data
-		
+		// if split_data == 1 that means there was no line break & therefore no data
 		if (seperated_data.length == 1){
 			box_position = "NO DATA";
 		}
@@ -402,9 +401,12 @@ public class Robot extends IterativeRobot {
 	                    final_array[i] = Double.parseDouble(split_data[i]);
 	                }
 	            }
+	            
+	            /*	---		Uncomment to get the coordinates of the square tracking the cube --
 	            for (int x=0; x<final_array.length; x++){
 	                System.out.println(final_array[x]);
-	            }
+	            }*/
+	            
 	            Center_X = (final_array[3]+final_array[1])/2;
 	        }
 		}
@@ -416,21 +418,25 @@ public class Robot extends IterativeRobot {
 		double Center_X = androidData();
 		double degreeOffset = (120 - Center_X)*DEGREES_PER_PIXEL;
 		
-		
+		// FIXME: Already removed the not before turnLeft/ turnRight
 		if (Center_X > 120){
-			while (!turnLeft(gyroscope.getAngle()%360 + degreeOffset)){
+			System.out.println("Should be turning left");
+			while (turnLeft(gyroscope.getAngle()%360 - degreeOffset)){
 				stop();
 			}
 		}
 		if (Center_X < 120){
-			while (!turnRight(gyroscope.getAngle()%360 + degreeOffset)){
+			System.out.println("Should be turning right");
+			while (turnRight(gyroscope.getAngle()%360 - degreeOffset)){
 				stop();
 			}
 		}
 		else{
+			System.out.println("Should not be moving, NO DATA");
 			stop();
 		}
 	}
+	
 	
 	private void tipPrevention(){
 		if (gyroscope.getPitch() > 10){
