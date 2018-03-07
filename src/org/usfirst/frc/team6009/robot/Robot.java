@@ -418,12 +418,12 @@ public class Robot extends IterativeRobot {
 		
 		
 		if (Center_X > 120){
-			while (!turnLeft(degreeOffset)){
+			while (!turnLeft(gyroscope.getAngle()%360 + degreeOffset)){
 				stop();
 			}
 		}
 		if (Center_X < 120){
-			while (!turnRight(degreeOffset)){
+			while (!turnRight(gyroscope.getAngle()%360 + degreeOffset)){
 				stop();
 			}
 		}
