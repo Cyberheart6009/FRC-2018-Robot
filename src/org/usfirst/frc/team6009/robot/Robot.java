@@ -72,7 +72,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	//auto cases
 	// Turn2, Turn3, Turn4, Straight2, Straight3, Straight4
-	public enum Step { Straight, Straight2, Straight3, Straight4, Turn, Turn1, Turn2, Turn3, Turn4, ElevatorUp1, GripperOut1, CubeOut, CubeIn, CubeOut2,  Done }
+	public enum Step { 
+		Straight, Straight2, Straight3, Straight4, 
+		Turn, Turn1, Turn2, Turn3, Turn4, 
+		Elevator1, Elevator2, 
+		Gripper1, 
+		Cube1, Cube2,  
+		Done 
+		}
 	public Step autoStep = Step.Straight;
 	public long timerStart;
 
@@ -572,7 +579,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				case Straight:
 					resetEncoders();
 					if (driveDistanceStraight(70,0.3)){
-						autoStep = Step.Turn2;
+						autoStep = Step.Turn;
 						System.out.println("Moved Straight");
 					}
 					break;
@@ -583,8 +590,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					case Turn:
 						if (turnInPlace(90)) {
 						  	resetEncoders();
-							autoStep = Step.Straight;
-							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
 							System.out.println("Turned Right");
 						}
 						break;
@@ -598,26 +604,23 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					case Turn2:
 						if (turnInPlace(0)) {
 						  	resetEncoders();
-							autoStep = Step.Straight;
-							rotationPID.setEnabled(false);
+							autoStep = Step.Straight3;
 							System.out.println("Turned Left");
 						}
 						break;
 					case Straight3:
-						int height1 = 0; //remove this after an actual elevator height equation is created
-						resetEncoders();
-						driveStraight(0, 0.4);
-						if (getDistance() >= 70) {
-							stop();
-						}
-						timerStart = System.currentTimeMillis();
-						autoStep = Step.Turn;
-						elevatorGroup.set(0.3);
-						if (height1 == 20) {
-							elevatorGroup.set(0);
+						if (driveDistanceStraight(59,0.3)){
+							autoStep = Step.Elevator1;
+							System.out.println("Moved Straight");
 						}
 						break;
-					case GripperOut1:
+					case Elevator1:
+						if (elevatorAscend(20,0.8)) {
+							autoStep = Step.Gripper1;
+							System.out.println("Moved Straight");
+						}
+						break;
+					case Gripper1:
 						gripperGroup.set(0.3);
 					default:
 						System.out.println("haha");
@@ -737,6 +740,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rotationPID.setEnabled(true);
 			leftChassis.set(rotationPID.get());
 			rightChassis.set(-rotationPID.get());
+			rotationPID.setEnabled(true);
 			return false;
 		}
 		
@@ -904,6 +908,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftFront.set(0);
 		rightBack.set(0);
 		rightFront.set(0);
+		elevator.set(0);
 	}
 
 	@Override
