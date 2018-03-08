@@ -85,6 +85,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}
 	public Step autoStep = Step.Straight1;
 	public long timerStart;
+	
+	//Controller Inversion
+	public enum isInverted {
+		TRUE,
+		FALSE
+	}
+	
+	public isInverted controlInvert = isInverted.FALSE;
 
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
@@ -188,6 +196,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
+		elevatorGroup = new SpeedControllerGroup(elevatorOne, elevatorTwo);
 		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
 		gripperGroup = new SpeedControllerGroup(gripperOne, gripperTwo);
 		
@@ -216,6 +225,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		//gyroscope.calibrate();
 		
 		rotationPID = new PIDController(KpTurn, Ki, Kd, gyroscope, this);
+		
 	}
 
 	/**
@@ -449,8 +459,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					break;
 				case CubeOut:
 					if (height < 40) {
-						elevatorOne.set(0.3);
-						elevatorTwo.set(0.3);
+						elevatorGroup.set(0.3);
 					}
 					else {
 						stopElevator();
@@ -468,8 +477,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					resetEncoders();
 					if (positionSelected == leftSwitchSwitch) {
 						if (height < 0) {
-							elevatorOne.set(-0.1);
-						 	elevatorTwo.set(-0.1);
+							elevatorGroup.set(-0.1);
 						}
 						else {
 							stopElevator();
@@ -493,8 +501,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					}
 					else {
 						if (height < 0) {
-							elevatorOne.set(-0.1);
-							elevatorTwo.set(-0.1);
+							elevatorGroup.set(-0.1);
 						}
 						else {
 							stopElevator();
@@ -519,8 +526,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					break;
 				case CubeOut2:
 					if (height < 40) {
-						elevatorOne.set(0.3);
-						elevatorTwo.set(0.3);
+						elevatorGroup.set(0.3);
 					}
 					else {
 						stopElevator();
@@ -731,7 +737,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		ultra_solenoid.set(true);
 		//leftChassis.set(0.1);
 		//rightChassis.set(0.1);
-		chassis.arcadeDrive(driver.getX(), -driver.getY());
+		
+		if (controlInvert == isInverted.FALSE) {
+			chassis.arcadeDrive(driver.getX(), -driver.getY());
+		} 
+		else if (controlInvert == isInverted.TRUE) {
+			chassis.arcadeDrive(-driver.getX(), driver.getY());
+		}
 		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
@@ -756,10 +768,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rotationPID.setEnabled(false);
 		} 
 		else if (aButton) {
-			rotationPID.setSetpoint(0);
-			rotationPID.setEnabled(true);
-			leftChassis.set(rotationPID.get());
-			rightChassis.set(-rotationPID.get());
 		}
 		if(xButton){
 			gyroscope.reset();
@@ -773,7 +781,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				System.out.println("DriveStraight");
 			}
 		}
-		if (leftBumper) {
+		
+		if (start) {
+			//Invert the controls
+			if (controlInvert == isInverted.FALSE) {
+				controlInvert = isInverted.TRUE;
+			} else if (controlInvert == isInverted.TRUE) {
+				controlInvert = isInverted.TRUE;
+			}
+		}
+		/**Change PID Values**/
+		/*if (leftBumper) {
 			Kp -= 0.005;
 		} else if (rightBumper) {
 			Kp += 0.005;
@@ -787,7 +805,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			Kd -= 0.005;
 		} else if (rightThumbPush) {
 			Kd += 0.005;
-		}
+		}*/
 		
 		//System.out.println(rotationPID.get());
 		updateSmartDashboard();
@@ -846,8 +864,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public boolean elevatorAscend(double height, double speed) {
 		System.out.println("elevatorClimbHeight()");
 		if (getElevatorHeight() < height){
-			elevatorOne.set(speed);
-			elevatorTwo.set(speed);
+			elevatorGroup.set(speed);
 			return false;
 		}
 		else {
@@ -861,8 +878,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public boolean elevatorDescend(double height, double speed) {
 		System.out.println("elevatorClimbHeight()");
 		if (getElevatorHeight() > height){
-			elevatorOne.set(-speed);
-			elevatorTwo.set(-speed);
+			elevatorGroup.set(-speed);
 			return false;
 		}
 		else {
@@ -1016,7 +1032,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	@Override
 	public void pidWrite(double output) {
-		// TODO Auto-generated method stub
+		// TODOish Auto-generated method stub
 		
 	}
 }
