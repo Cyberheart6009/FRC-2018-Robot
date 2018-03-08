@@ -14,7 +14,6 @@
 
 package org.usfirst.frc.team6009.robot;
 
-
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -41,9 +40,6 @@ import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.PIDSource;
 import edu.wpi.first.wpilibj.SPI;
-import org.spectrum3847.RIOdroid.RIOadb;
-import org.spectrum3847.RIOdroid.RIOdroid;
-
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -52,10 +48,6 @@ import org.spectrum3847.RIOdroid.RIOdroid;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-/*TODO: 	- Robot Tip prevention (if angle > threshold) -> take over drive train motors and reverse to prevent the tip
- * 			- Function to get phone logs and parse the data in order to retrieve and calculate the location of the box
- * 			
-*/
 public class Robot extends IterativeRobot implements PIDOutput {	
 	String gameData;
 	// Auto Modes Setup
@@ -105,32 +97,24 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
-	final static double DEGREES_PER_PIXEL_RIGHT = 0.07;
-	final static double DEGREES_PER_PIXEL_LEFT = 0.100;
-	double currentSpeed;
-	double oldEncoderCounts = 0;
-	long old_time = 0;
-	String box_position = "NO DATA";
-	boolean initializeADB = false;
 	
 	// SpeedController Object creations - Define all names of motors here
 	SpeedController leftFront, leftBack, rightFront, rightBack, climberOne, climberTwo, elevatorOne, elevatorTwo, gripperOne, gripperTwo;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, climberGroup, gripperGroup;
-
+	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
 	
 	// Joystick Definitions
 	Joystick driver;
-  Joystick operator;
 	
 	//Limit Switch
-	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber;
+	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber, limitSwitchGripper;
 	
 	// Boolean for buttons
-	boolean aButton, bButton, yButton, xButton, leftBumper, rightBumper, start, select, leftThumbPush, rightThumbPush, aButtonOp, bButtonOp, xButtonOp, yButtonOp;;
+	boolean aButton, bButton, yButton, xButton, leftBumper, rightBumper, start, select, leftThumbPush, rightThumbPush;
 	
 	// Analog Sensors
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
@@ -192,33 +176,29 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		limitSwitchDownElevator =  new DigitalInput(5);
 		limitSwitchUpClimber = new DigitalInput(6);
 		limitSwitchDownClimber = new DigitalInput(7);
+		limitSwitchGripper = new DigitalInput(8);
 		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
-    climberOne = new Spark(4);
-		climberTwo = new Spark(5);
 		elevatorOne = new Spark(6);
 		elevatorTwo = new Spark(7);
+		climberOne = new Spark(4);
+		climberTwo = new Spark(5);
 		gripperOne = new Spark(8);
 		gripperTwo = new Spark(9);
-    
-    //Inverting Sparks
-		elevatorOne.setInverted(true);
-		gripperTwo.setInverted(true);
-    
+		
+		//Creating the Joystick object
+		driver = new Joystick(0);
+		
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		elevatorGroup = new SpeedControllerGroup(elevatorOne, elevatorTwo);
 		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
 		gripperGroup = new SpeedControllerGroup(gripperOne, gripperTwo);
-		
-		// Defines Joystick ports
-		driver = new Joystick(0);
-		operator = new Joystick(1);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
@@ -231,35 +211,20 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		ultrasonic_black = new AnalogInput(1);
 		ultra_solenoid = new Solenoid(0);
 		
+		
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
 		rightEncoder = new Encoder(2,3);
 		elevatorEncoder = new Encoder(8,9);
+		//leftElevator = new Encoder(4, 5);
+		//rightElevator = new Encoder(6, 7);
 		
 		//Gyroscope Setup
 		//gyroscope = new ADXRS450_Gyro();
 		gyroscope = new AHRS(SPI.Port.kMXP);
 		//gyroscope.calibrate();
-
-		rotationPID = new PIDController(KpTurn, Ki, Kd, gyroscope, this);
-    
-    // Initialize ADB Communication 
 		
-		if (initializeADB){
-			System.out.println("Initializing adb");
-			RIOdroid.init();
-			RIOadb.init();
-			System.out.println("adb Initialized");
-			
-			System.out.println("Begin ADB Tests");
-			System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
-			//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
-			System.out.println("logcat done");
-		}
-		else{
-			System.out.println("ADB INIT NOT RAN");
-		}
-	}
+		rotationPID = new PIDController(KpTurn, Ki, Kd, gyroscope, this);
 		
 	}
 
@@ -288,6 +253,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		resetEncoders();
 		autoStep = Step.Straight1;
 		gyroscope.reset();
+		
 	}
 
 	/**
@@ -758,16 +724,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			}
 			//These are combined under 1 if section because they both start with scale
 			if (movementSelected == "ScaleScale" || movementSelected == "ScaleSwitch") {
+				
 			}
 		}
-		
-		return;
 	}
 
 	/**
 	 * This function is called periodically during operator control.
 	 */
-	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
 		ultra_solenoid.set(true);
@@ -780,7 +744,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		else if (controlInvert == isInverted.TRUE) {
 			chassis.arcadeDrive(-driver.getX(), driver.getY());
 		}
-    
+		
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
@@ -791,10 +755,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		start = driver.getRawButton(8);
 		leftThumbPush = driver.getRawButton(9);
 		rightThumbPush = driver.getRawButton(10);
-    aButtonOp = operator.getRawButton(1);
-		bButtonOp = operator.getRawButton(2);
-		xButtonOp = operator.getRawButton(3);
-		yButtonOp = operator.getRawButton(4);
 		
 		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
@@ -851,66 +811,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		updateSmartDashboard();
 	}
 
-		// debug for tipPrevention
-		//System.out.println(gyroscope.getPitch());
-		
-		if (xButton) {
-			//System.out.print(androidData());
-			elevatorEncoder.reset();
-			resetEncoders();
-			gyroscope.reset();
-		} 
-		
-		if (aButton){
-			turnToBox();
-		}
-		
-		if (aButtonOp) {
-			gripperGroup.set(1);
-		} 
-		else if (bButtonOp) {
-			gripperGroup.set(-1);
-		}
-		else {
-			gripperGroup.set(0);
-		}
-		
-		
-		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
-			elevator.set(operator.getRawAxis(1));
-		}
-		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(1) > 0)) { 
- 			elevator.set(0);
- 			System.out.println("UP ELEVATOR limit Switct being pressed while DOWN Joystick is pressed");
- 		}
-		if (!limitSwitchDownElevator.get() & (operator.getRawAxis(1) < 0)) { 
- 			elevator.set(0);
- 			System.out.println("DOWN ELEVATOR limit Switct being pressed while UP Joystick is pressed");
- 		}
-		//else {
-			//elevatorGroup.set(0);
-		//}
- 			/*
-		if (limitSwitchUpClimber.get() & limitSwitchDownClimber.get()) {
-			climberGroup.set(operator.getRawAxis(5));
-		}
-		
-		if (!limitSwitchUpClimber.get() & (operator.getRawAxis(5) > 0)) { 
- 			climberGroup.set(0);
- 			System.out.println("UP CLIMBER limit Switct being pressed while DOWN Joystick is pressed");	
- 		}
-		if (!limitSwitchDownClimber.get() & (operator.getRawAxis(5) < 0)) {
-			climberGroup.set(0);
- 			System.out.println("DOWN CLIMBER limit Switct being pressed while UP Joystick is pressed");	
- 		}
-		//else {
-			//climberGroup.set(0); 
-		//}*/
-	    gripper.set(0);
-		}
-		updateSmartDashboard();
-	}
-				
 	/**
 	 * This function is called periodically during test mode.
 	 */
@@ -1007,17 +907,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			System.out.println("The squareDrive() function could not find a valid squareStep int");
 		}
 	}
-		updateSmartDashboard();
-	}
 	
-	
-	
-	
-	//--------------------------//
-	//		Custom Functions	//
-	//--------------------------//
-	
-	// Resets encoder values to 0
 	public void resetEncoders(){
 		leftEncoder.reset();
 		rightEncoder.reset();
@@ -1032,22 +922,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		return (double)((leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
 
-	// Calculates and returns the Robot distance using the encoders attached to each side of the drive train
-	public double getDistance(){
-		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
-	}
-	
-	private double getElevatorHeight(){
-		return (double)(elevatorEncoder.get()/ELEVATOR_ENCODER_COUNTS_PER_INCH);
-	}
-	
-	// Calculates and returns the distance from the Yellow Ultrasonic Distance Sensor
 	public double getUltrasonicYellowDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
 		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
 	}
 
-	// Calculates and returns the distance from the Black Ultrasonic Distance Sensor
 	public double getUltrasonicBlackDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
 		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
@@ -1068,111 +947,28 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		SmartDashboard.putNumber("Kd: JoyPress", Kd);
 	}
 	
-	// Calculates the robotSpeed
-	public double robotSpeed() {
-		// Calculates current speed of the robot in m/s
-		currentSpeed = ((getDistance() - oldEncoderCounts)/(System.currentTimeMillis() - old_time)) * 0.0254;
-		
-		old_time = System.currentTimeMillis();
-		oldEncoderCounts = getDistance();
-		return (double) currentSpeed;
-	}
-
-	private double androidData(){
-		double Center_X = 0;
-		String box_data = RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S");
-		String[] seperated_data = box_data.split("\n");
-		//System.out.println(seperated_data[(seperated_data.length-1)]);
-		// if split_data == 1 that means there was no line break & therefore no data
-		if (seperated_data.length == 1){
-			Center_X = 0;
-		}
-		else{	// if the length of the split array is longer than 1 then 
-			box_position = seperated_data[(seperated_data.length-1)];
-			String[] splitted;
-	        double[] final_array = new double[4];
-	        String[] split_data = box_position.split(",");
-	        
-	        if (split_data.length != 4){
-	        	Center_X = 0;
-	            //System.out.println("Invalid");
-	        }
-	        else{
-	        	// this is not running
-	            for (int i=0; i<split_data.length; i++){
-	                if (i == 0){
-	                    splitted = split_data[0].split(" ");
-	                    final_array[0] = Double.parseDouble(splitted[splitted.length-1]);
-	                }
-	                else if(i == 3){
-	                    splitted = split_data[3].split(" ");
-	                    final_array[3] = Double.parseDouble(splitted[0]);
-	                }
-	                else{
-	                    final_array[i] = Double.parseDouble(split_data[i]);
-	                }
-	            }
-	            
-	            /*	---		Uncomment to get the coordinates of the square tracking the cube --
-	            for (int x=0; x<final_array.length; x++){
-	                System.out.println(final_array[x]);
-	            }*/
-	            
-	            Center_X = (final_array[3]+final_array[1])/2;
-	        }
-		}
-		System.out.println("Center x: " + Center_X);
-		return Center_X;
-	}
-	
-	private void turnToBox(){
-		double Center_X = androidData();
-		//System.out.print("Offset: " + degreeOffset);
-		
-		// FIXME: Already removed the not before turnLeft/ turnRight
-		if (Center_X > 170 && Center_X != 0){
-			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_LEFT;
-			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
-
-			System.out.println("Should be turning left, Offset: " + degreeOffset);
-			while (gyroscope.getAngle()%360 > boxAngle){
-				turnLeft(boxAngle);
-			}
-		}
-		if (Center_X < 170 && Center_X != 0){
-			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_RIGHT;
-			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
-			System.out.println("Should be turning right, Offset: " + degreeOffset);
-			while(gyroscope.getAngle()%360 < boxAngle){
-				turnRight(boxAngle);
-			}
-		}
-		else{
-			System.out.println("Should not be moving, NO DATA");
-			stop();
-		}
-	}
-	
-	
-	private void tipPrevention(){
-		if (gyroscope.getPitch() > 10){
-			leftChassis.set(0.5);
-			rightChassis.set(0.5);
-		}
-		if (gyroscope.getPitch() < -10){
-			leftChassis.set(-0.5);
-			rightChassis.set(-0.5);
-		}
-	}
-	
+	// This is the function that allows the robot to drive straight no matter what
+	// It automatically corrects itself and stays locked onto the set angle
 	private void driveStraight(double heading, double speed) {
 		// get the current heading and calculate a heading error
-		double currentAngle = (gyroscope.getAngle()%360.0);
+		double currentAngle = gyroscope.getAngle()%360.0;
+		//System.out.println("Gyroscope Angle: " + gyroscope.getAngle());
+		//System.out.println("Gyroscope Angle % 360.0: " + currentAngle);
 		//System.out.println("driveStraight");
 		double error = heading - currentAngle;
+		//rotationPID.setEnabled(true);
+		//rotationPID.setSetpoint(0);
 		// calculate the speed for the motors
 		double leftSpeed = speed;
 		double rightSpeed = speed;
+
+		//		This code can make the robot turn very 
+		//		quickly if it is not pointed close to the
+		//		correct direction.  I bet this is the 
+		//		problem you are experiencing.
+		//		I think if you correct the state machine
+		//		if statements above, you will be able to 
+		//		control the turning speed.
 		
 		// adjust the motor speed based on the compass error
 		if (error < 0) {
@@ -1186,12 +982,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			rightSpeed -= error * Kp;
 		}
 	
-		// set the motors based on the inputed speed
+		// set the motors based on the inputted speed
 		leftChassis.set(leftSpeed);
 		rightChassis.set(rightSpeed);
 	}
 	
-	//slow motor speeds while turning
 	private boolean turnRight(double targetAngle){
 		// We want to turn in place to 60 degrees 
 		leftBack.set(0.35);
@@ -1238,36 +1033,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		// TODOish Auto-generated method stub
-    
-	private boolean turnLeft(double targetAngle){
-		// We want to turn in place to 60 degrees 
-		leftBack.set(-0.35);
-		leftFront.set(-0.35);
-		rightBack.set(-0.35);
-		rightFront.set(-0.35);
-
-		double currentAngle = gyroscope.getAngle();
-		if (currentAngle <= targetAngle + 2){
-			return true;
-		}
-		return false;
-	}
-	// Pushes all data the Smart Dashboard when called
-	private void updateSmartDashboard() {
-		SmartDashboard.putData("Gyro", gyroscope);
-		SmartDashboard.putNumber("Gyro Angle", gyroscope.getAngle());
-		SmartDashboard.putNumber("Gyro Rate", gyroscope.getRate());
-
-		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
-		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
-		SmartDashboard.putNumber("Encoder Distance", getDistance());
-		
-		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
-		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
-		
-		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
-		
-		SmartDashboard.putNumber("Robot Speed", robotSpeed());
 		
 	}
 }
