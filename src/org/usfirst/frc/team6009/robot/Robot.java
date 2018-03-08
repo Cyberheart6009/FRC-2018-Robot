@@ -245,6 +245,10 @@ public class Robot extends IterativeRobot {
 	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
+		ultra_solenoid.set(true);
+		//leftChassis.set(0.1);
+		//rightChassis.set(0.1);
+		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		//tipPrevention();
@@ -313,7 +317,8 @@ public class Robot extends IterativeRobot {
 		//else {
 			//climberGroup.set(0); 
 		//}*/
-
+	    gripper.set(0);
+		}
 		updateSmartDashboard();
 	}
 				
