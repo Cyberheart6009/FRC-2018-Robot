@@ -73,22 +73,25 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	//auto cases
 	// Turn2, Turn3, Turn4, Straight2, Straight3, Straight4
 	public enum Step { 
-		Straight, Straight2, Straight3, Straight4, 
-		Turn, Turn1, Turn2, Turn3, Turn4, 
-		Elevator1, Elevator2, 
-		Gripper1, 
-		Cube1, Cube2,  
+		Straight1, Straight2, Straight3, Straight4, Straight5, Straight6,
+		Turn1, Turn2, Turn3, Turn4, 
+		Elevator1, Elevator2, Elevator3,
+		Gripper1, Gripper2,
+		Cube1, Cube2,
+		CubeOut, CubeOut2,
+		CubeIn,
+		GripStraight1,
 		Done 
 		}
-	public Step autoStep = Step.Straight;
+	public Step autoStep = Step.Straight1;
 	public long timerStart;
 
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
-	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 213.9;
+	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, climberOne, climberTwo, elevator, gripperOne, gripperTwo;
+	SpeedController leftFront, leftBack, rightFront, rightBack, climberOne, climberTwo, elevatorOne, elevatorTwo, gripperOne, gripperTwo;
 	
 	// Speed controller group used for new differential drive class
 	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, climberGroup, gripperGroup;
@@ -172,11 +175,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
+		elevatorOne = new Spark(6);
+		elevatorTwo = new Spark(7);
 		climberOne = new Spark(4);
 		climberTwo = new Spark(5);
-		elevator = new Spark(6);
-		gripperOne = new Spark(7);
-		gripperTwo = new Spark(8);
+		gripperOne = new Spark(8);
+		gripperTwo = new Spark(9);
 		
 		//Creating the Joystick object
 		driver = new Joystick(0);
@@ -237,7 +241,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		//Reset the gyro so the heading at the start of the match is 0
 		resetEncoders();
-		autoStep = Step.Straight;
+		autoStep = Step.Straight1;
 		gyroscope.reset();
 		
 	}
@@ -296,16 +300,21 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		return;*/
 	
 	public void autonomousPeriodic() {
+		double distance = getDistance();
+		if (System.currentTimeMillis() - timerStart < 500) {
+			return;
+		}
 		if (positionSelected.equalsIgnoreCase(square)) {
 			System.out.println("Square Auto Is Operating");
 			switch(autoStep){
-				case Straight:
+				case Straight1:
 					if (driveDistanceStraight(24,0.3)){
-						autoStep = Step.Turn;
+						autoStep = Step.Turn1;
 						System.out.println("Moved Straight");
+						timerStart = System.currentTimeMillis();
 					}
 					break;
-				case Turn:
+				case Turn1:
 					/*if(turnRight(90)){
 						stop();
 						resetEncoders();
@@ -315,16 +324,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					}*/
 					if (turnInPlace(90)) {
 					  	resetEncoders();
-						autoStep = Step.Straight;
+						autoStep = Step.Straight1;
 						rotationPID.setEnabled(false);
 						gyroscope.reset();
 						System.out.println("Turned Right");
+						timerStart = System.currentTimeMillis();
 					}
 					break;
 			}
 		}
 		/**km code begins**/
-		/*double height = getElev/atorheight();
+		double height = getElevatorHeight();
 		if (positionSelected.equalsIgnoreCase(straight)){
 			//driveStraight(0, 0.4);
 			leftChassis.set(0.3);
@@ -333,219 +343,203 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				stop();
 			}
 		}
-		if (positionSelected.equalsIgnoreCase(square)) {
-		switch (autoStep) {
-		case Straight:
-			rotationPID.setEnabled(false);
-			gyroscope.reset();
-			resetEncoders();
-			
-			driveStraight(0, 0.3);
-			
-			if (distance > 10) {
-				stop();
-			}
-			
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Turn;
-			break;
-			
-		case Turn:
-			rotationPID.setEnabled(true);
-			rotationPID.setSetpoint(90);
-			leftChassis.set(rotationPID.get());
-			rightChassis.set(-rotationPID.get());
-			
-			timerStart = System.currentTimeMillis();
-			autoStep = Step.Straight;
-			break;
-			
-		case Done:
-			stop();
-			break;
-		}
-		}
 		if (positionSelected.equalsIgnoreCase(leftSwitchSwitch) || positionSelected.equalsIgnoreCase(rightSwitchSwitch)) {
 			switch (autoStep) {
-			case Straight:
-				resetEncoders();
-				driveStraight(0, 0.4);
-				if (distance > 220) {
+				case Straight1:
+					resetEncoders();
+					if (distance < 220) {
+						driveStraight(0, 0.4);
+					}
+					else {
+						stop();
+						autoStep = Step.Turn1;
+					}
+					break;
+				case Turn1: 
+					if (positionSelected == leftSwitchSwitch){
+						if (gyroscope.getAngle() >= (90 - 2) && gyroscope.getAngle() <= (90 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(90);
+						}
+					}
+					else {
+						if (gyroscope.getAngle() >= (-90 - 2) && gyroscope.getAngle() <= (-90 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(-90);
+						}
+					}
+					break;
+				case Straight2:
+					if (positionSelected == leftSwitchSwitch) {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+						if (distance < 45.5) {
+							driveStraight(90, 0.4);
+						}
+						else {
+							stop();
+							autoStep = Step.Turn2;
+						}
+					}
+					else {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+						if (distance < 45.5) {
+							driveStraight(-90, 0.4);
+						}
+						else {
+							stop();
+							autoStep = Step.Turn2;
+						}
+					}
+					break;
+				case Turn2:
+					if (positionSelected == leftSwitchSwitch) {
+						if (gyroscope.getAngle() >= (180 - 2) && gyroscope.getAngle() <= (180 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(180);
+						}
+						autoStep = Step.Straight3;
+					}
+					else {
+						if (gyroscope.getAngle() >= (-180 - 2) && gyroscope.getAngle() <= (-180 + 2) ){
+							rotationPID.setEnabled(false);
+							autoStep = Step.Straight2;
+						}
+						else {
+							PIDTurn(-180);
+						}
+						autoStep = Step.Straight3;
+					}
+					break;
+				case Straight3:
+					/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
+					in regards to our robot so using the tracking will make sure we are in line with the cube*/
+					if (positionSelected == leftSwitchSwitch) {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+						if (distance < 11){
+							driveStraight(180, 0.4);
+						}
+						else {
+							stop();
+							autoStep = Step.CubeOut;
+						}
+					}
+					else {
+						rotationPID.setEnabled(false);
+						resetEncoders();
+						if (distance < 11){
+						driveStraight(-180, 0.4);
+						}
+						else {
+							stop();
+							autoStep = Step.CubeOut;
+						}
+					}
+					break;
+				case CubeOut:
+					if (height < 40) {
+						elevatorOne.set(0.3);
+						elevatorTwo.set(0.3);
+					}
+					else {
+						stopElevator();
+					}
+					/*gripper1.set(0.3);	
+					gripper2.set(0.3);
+					if (!limitSwitchGripper.get()) {
+						gripper1.set(0);
+						gripper2.set(0);
+					}*/
+					autoStep = Step.CubeIn;
+					break;
+				case CubeIn:
+					rotationPID.setEnabled(false);
+					resetEncoders();
+					if (positionSelected == leftSwitchSwitch) {
+						if (height < 0) {
+							elevatorOne.set(-0.1);
+						 	elevatorTwo.set(-0.1);
+						}
+						else {
+							stopElevator();
+						}
+						if (limitSwitchDownElevator.get()) {
+							stopElevator();
+						}
+						if (distance < 13) {
+							driveStraight(180, 0.4);
+						}
+						else {
+							stop();
+						}
+						/*gripper1.set(-0.3);
+						gripper2.set(-0.3);
+						if (limitSwitchGripper.get()) {
+							gripper1.set(0);
+							gripper2.set(0);
+						}*/
+						autoStep = Step.CubeOut2;
+					}
+					else {
+						if (height < 0) {
+							elevatorOne.set(-0.1);
+							elevatorTwo.set(-0.1);
+						}
+						else {
+							stopElevator();
+						}
+						if (limitSwitchDownElevator.get()) {
+							stopElevator();
+						}
+						if (distance < 13) {
+							driveStraight(-180, 0.4);
+						}
+						else {
+							stop();
+						}
+						/*gripper1.set(-0.3);
+						gripper2.set(-0.3);
+						if (limitSwitchGripper.get()) {
+							gripper1.set(0);
+							gripper2.set(0);
+						}*/
+						autoStep = Step.CubeOut2;
+					}
+					break;
+				case CubeOut2:
+					if (height < 40) {
+						elevatorOne.set(0.3);
+						elevatorTwo.set(0.3);
+					}
+					else {
+						stopElevator();
+					}
+					/*gripper1.set(0.3);
+					gripper2.set(0.3);
+					if (!limitSwitchGripper.get()) {
+						gripper1.set(0);
+						gripper2.set(0);
+					}*/
+					autoStep = Step.Done;
+					break;
+				case Done:
 					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn;
-				break;
-			case Turn: 
-				
-				if (positionSelected == leftSwitchSwitch){
-				rotationPID.setSetpoint(90);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-	
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight2;
-				}
-				else {
-				rotationPID.setSetpoint(-90);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-					
-					timerStart = System.currentTimeMillis();
-					autoStep = Step.Straight2;
-				}
-				break;
-			case Straight2:
-				if (positionSelected == leftSwitchSwitch) {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				driveStraight(90, 0.4);
-				if (distance > 45.5) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn2;
-				}
-				else {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				driveStraight(-90, 0.4);
-				if (distance > 45.5) {
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Turn2;
-				}
-				break;
-			case Turn2:
-				
-				if (positionSelected == rightSwitchSwitch) {
-				rotationPID.setSetpoint(180);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight3;
-				}
-				else {
-				rotationPID.setSetpoint(-180);
-				rotationPID.setEnabled(true);
-				leftChassis.set(rotationPID.get());
-				rightChassis.set(-rotationPID.get());
-				
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Straight3;
-				}
-				break;
-			case Straight3:
-				/* could use vision tracking of cube, at this point the cube should be about in front of and centered 
-				in regards to our robot so using the tracking will make sure we are in line with the cube
-				
-				if (positionSelected == leftSwitchSwitch) {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				
-				driveStraight(180, 0.4);
-				if (distance > 11){
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut;
-				}
-				else {
-				rotationPID.setEnabled(false);
-				resetEncoders();
-					
-				driveStraight(-180, 0.4);
-				if (distance > 11){
-					stop();
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut;	
-				}
-				break;
-			case CubeOut:
-				elevator1.set(0.3);
-				elevator2.set(0.3);
-				if (height > 40) {
-					stop();
-				}
-				
-				gripper1.set(0.3);	
-				gripper2.set(0.3);
-				if (!limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeIn;
-				break;
-			case CubeIn:
-				rotationPID.setEnabled(false);
-				resetEncoders();
-				if (positionSelected == leftSwitchSwitch) {
-				elevator1.set(-0.3);
-				elevator2.set(-0.3);
-				if (limitSwitchDownElevator.get()) {
-					stop();
-				}
-				driveStraight(180, 0.4);
-				if (distance > 13) {
-					stop();
-				}
-				gripper1.set(-0.3);
-				gripper2.set(-0.3);
-				if (limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut2;
-				}
-				else {
-				elevator1.set(-0.3);
-				elevator2.set(-0.3);
-				if (limitSwitchDownElevator.get()) {
-					stop();
-				}
-				driveStraight(-180, 0.4);
-				if (distance > 13) {
-					stop();
-				}
-				gripper1.set(-0.3);
-				gripper2.set(-0.3);
-				if (limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.CubeOut2;
-				}
-				break;
-			case CubeOut2:
-				elevator1.set(0.3);
-				elevator2.set(0.3);
-				if (height > 40) {
-					stop();
-				}
-				gripper1.set(0.3);
-				gripper2.set(0.3);
-				if (!limitSwitchGripper.get()) {
-					gripper1.set(0);
-					gripper2.set(0);
-				}
-				timerStart = System.currentTimeMillis();
-				autoStep = Step.Done;
-				break;
-			
-			case Done:
-				stop();
-				break;
+					stopElevator();
+					stopGripper();
+					break;
 			}
-		}*/
+		}
 		/**km code ends*/
 		//This code is activated if the robot is on the left or right sides. The modes will be split up later.
 		if (positionSelected == "left" || positionSelected == "right") {
@@ -576,22 +570,24 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			//These are combined under 1 if section because they both start with switch
 			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
 				switch (autoStep) {
-				case Straight:
+				case Straight1:
 					resetEncoders();
 					if (driveDistanceStraight(70,0.3)){
-						autoStep = Step.Turn;
+						autoStep = Step.Turn1;
 						System.out.println("Moved Straight");
+						timerStart = System.currentTimeMillis();
 					}
 					break;
 				}
 				if (gameData.charAt(0) == 'L') {
 					// TODO Insert Code to pick up box and move to the left side of the scale
 					switch (autoStep) {
-					case Turn:
+					case Turn1:
 						if (turnInPlace(90)) {
 						  	resetEncoders();
 							autoStep = Step.Straight2;
 							System.out.println("Turned Right");
+							timerStart = System.currentTimeMillis();
 						}
 						break;
 					case Straight2:
@@ -599,6 +595,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						if (driveDistanceStraight(59,0.3)){
 							autoStep = Step.Turn2;
 							System.out.println("Moved Straight");
+							timerStart = System.currentTimeMillis();
 						}
 						break;
 					case Turn2:
@@ -606,25 +603,111 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						  	resetEncoders();
 							autoStep = Step.Straight3;
 							System.out.println("Turned Left");
+							timerStart = System.currentTimeMillis();
 						}
 						break;
 					case Straight3:
 						if (driveDistanceStraight(59,0.3)){
 							autoStep = Step.Elevator1;
 							System.out.println("Moved Straight");
+							timerStart = System.currentTimeMillis();
 						}
 						break;
 					case Elevator1:
-						if (elevatorAscend(20,0.8)) {
+						if (elevatorAscend(20, 0.8)) {
 							autoStep = Step.Gripper1;
-							System.out.println("Moved Straight");
+							System.out.println("Elevator Ascended");
+							timerStart = System.currentTimeMillis();
 						}
 						break;
 					case Gripper1:
-						gripperGroup.set(0.3);
-					default:
-						System.out.println("haha");
+						if (System.currentTimeMillis() - timerStart >= 3000) {
+							autoStep = Step.Gripper1;
+							System.out.println("Gripper Outed");
+							timerStart = System.currentTimeMillis();
+						} else {
+							gripperGroup.set(0.3);
+						}
 						break;
+					case Elevator2:
+						if (elevatorDescend(0, 0.8)) {
+							autoStep = Step.Straight4;
+							System.out.println("Elevator Descended");
+							timerStart = System.currentTimeMillis();
+						}
+						break;
+					case Straight4:
+						if (driveDistanceStraight(-10, -0.3)) { 
+							resetEncoders();
+							autoStep = Step.Turn3;
+							System.out.println("Moved 10 inches backwards");
+							timerStart = System.currentTimeMillis();
+						}
+						break;
+					case Turn3:
+						if (turnInPlace(90)) {
+							resetEncoders();
+							autoStep = Step.GripStraight1;
+							System.out.println("Turned in place to 90 degrees");
+							timerStart = System.currentTimeMillis();
+						}
+						break;
+					case GripStraight1:
+						if (driveDistanceStraight(59,0.3)){ // FIXME Fix this distance value
+							autoStep = Step.Done;
+							System.out.println("Gripper Activated and moved straight");
+							timerStart = System.currentTimeMillis();
+						} else {
+							gripperGroup.set(0.3);
+						}
+						break;
+					case Done:
+						System.out.println("Auto Has finished");
+						break;
+					}
+					if (movementSelected == "switchSwitch") {
+						switch (autoStep) {
+						case Straight5:
+							if (driveDistanceStraight(-10, -0.3)) { // FIXME Set this distance value to negative the one above
+								resetEncoders();
+								autoStep = Step.Turn4;
+								System.out.println("Moved 10 inches backwards");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case Turn4:
+							if (turnInPlace(0)) {
+								resetEncoders();
+								autoStep = Step.Straight6;
+								System.out.println("Turned in place to 90 degrees");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case Straight6:
+							if (driveDistanceStraight(10, 0.3)) { // FIXME Set this distance value to negative the one above
+								resetEncoders();
+								autoStep = Step.Elevator3;
+								System.out.println("Moved 10 inches backwards");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case Elevator3:
+							if (elevatorAscend(20, 0.8)) {
+								autoStep = Step.Gripper2;
+								System.out.println("Elevator Ascended");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case Gripper2:
+							if (System.currentTimeMillis() - timerStart >= 3000) {
+								autoStep = Step.Gripper1;
+								System.out.println("Gripper Outed");
+								timerStart = System.currentTimeMillis();
+							} else {
+								gripperGroup.set(0.3);
+							}
+							break;
+						}
 					}
 					
 				}
@@ -732,7 +815,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	}
 	
 	public boolean turnInPlace(double setPoint) {
-		/* FIXME Setpoint is currently required to be exact, implement a range*/
+		/* XXX This might be fixed: Setpoint is currently required to be exact, implement a range*/
 		if (gyroscope.getAngle() >= (setPoint - 2) && gyroscope.getAngle() <= (setPoint + 2)) {
 			return true;
 		} else {
@@ -763,7 +846,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public boolean elevatorAscend(double height, double speed) {
 		System.out.println("elevatorClimbHeight()");
 		if (getElevatorHeight() < height){
-			elevator.set(speed);
+			elevatorOne.set(speed);
+			elevatorTwo.set(speed);
 			return false;
 		}
 		else {
@@ -776,8 +860,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	public boolean elevatorDescend(double height, double speed) {
 		System.out.println("elevatorClimbHeight()");
-		if (getElevatorHeight() < height){
-			elevator.set(speed);
+		if (getElevatorHeight() > height){
+			elevatorOne.set(-speed);
+			elevatorTwo.set(-speed);
 			return false;
 		}
 		else {
@@ -861,13 +946,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		double leftSpeed = speed;
 		double rightSpeed = speed;
 
-		// FIXME: This code can make the robot turn very 
-		//        quickly if it is not pointed close to the
-		//        correct direction.  I bet this is the 
-		//        problem you are experiencing.
-		//        I think if you correct the state machine
-		//        if statements above, you will be able to 
-		//        control the turning speed.
+		//		This code can make the robot turn very 
+		//		quickly if it is not pointed close to the
+		//		correct direction.  I bet this is the 
+		//		problem you are experiencing.
+		//		I think if you correct the state machine
+		//		if statements above, you will be able to 
+		//		control the turning speed.
 		
 		// adjust the motor speed based on the compass error
 		if (error < 0) {
@@ -903,14 +988,32 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		return false;
 	}
 	
+	private void PIDTurn(double setpoint) {
+		resetEncoders();
+		rotationPID.setSetpoint(setpoint);
+		rotationPID.setEnabled(true);
+		leftChassis.set(rotationPID.get());
+		rightChassis.set(-rotationPID.get());
+	}
+	
 	private void stop(){
 		leftBack.set(0);
 		leftFront.set(0);
 		rightBack.set(0);
 		rightFront.set(0);
-		elevator.set(0);
+		elevatorOne.set(0);
+		elevatorTwo.set(0);
 	}
-
+	
+	private void stopElevator() {
+		elevatorOne.set(0);
+		elevatorTwo.set(0);
+	}
+	private void stopGripper() {
+		gripperOne.set(0);
+		gripperTwo.set(0);
+	}
+	
 	@Override
 	public void pidWrite(double output) {
 		// TODO Auto-generated method stub
