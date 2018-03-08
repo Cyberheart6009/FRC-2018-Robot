@@ -62,7 +62,8 @@ public class Robot extends IterativeRobot {
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
-	final static double DEGREES_PER_PIXEL = 0.254;
+	final static double DEGREES_PER_PIXEL_RIGHT = 0.07;
+	final static double DEGREES_PER_PIXEL_LEFT = 0.100;
 	double currentSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
@@ -73,10 +74,10 @@ public class Robot extends IterativeRobot {
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator, climberOne, climberTwo, gripperOne, gripperTwo;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevatorOne, elevatorTwo, climberOne, climberTwo, gripperOne, gripperTwo;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis, climberGroup, gripperGroup;
+	SpeedControllerGroup leftChassis, rightChassis, climberGroup, gripperGroup, elevator;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
@@ -128,12 +129,13 @@ public class Robot extends IterativeRobot {
 		rightBack = new Spark(3);
 		climberOne = new Spark(4);
 		climberTwo = new Spark(5);
-		elevator = new Spark(6);
-		gripperOne = new Spark(7);
-		gripperTwo = new Spark(8);
+		elevatorOne = new Spark(6);
+		elevatorTwo = new Spark(7);
+		gripperOne = new Spark(8);
+		gripperTwo = new Spark(9);
 		
 		//Inverting Sparks
-		elevator.setInverted(true);
+		//elevatorOne.setInverted(true);
 		gripperTwo.setInverted(true);
 		
 		// Defines Joystick ports
@@ -151,6 +153,7 @@ public class Robot extends IterativeRobot {
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
 		gripperGroup = new SpeedControllerGroup(gripperOne, gripperTwo);
+		elevator = new SpeedControllerGroup(elevatorOne, elevatorTwo);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
@@ -281,7 +284,7 @@ public class Robot extends IterativeRobot {
 		
 		
 		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
-			elevator.set(-operator.getRawAxis(1));
+			elevator.set(operator.getRawAxis(1));
 		}
 		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(1) > 0)) { 
  			elevator.set(0);
@@ -373,21 +376,23 @@ public class Robot extends IterativeRobot {
 		double Center_X = 0;
 		String box_data = RIOdroid.executeCommand("adb logcat -t 150 ActivityManager:I native:D *:S");
 		String[] seperated_data = box_data.split("\n");
+		//System.out.println(seperated_data[(seperated_data.length-1)]);
 		// if split_data == 1 that means there was no line break & therefore no data
 		if (seperated_data.length == 1){
-			box_position = "NO DATA";
+			Center_X = 0;
 		}
 		else{	// if the length of the split array is longer than 1 then 
 			box_position = seperated_data[(seperated_data.length-1)];
 			String[] splitted;
 	        double[] final_array = new double[4];
-	        String[] split_data = box_data.split(",");
+	        String[] split_data = box_position.split(",");
 	        
 	        if (split_data.length != 4){
 	        	Center_X = 0;
 	            //System.out.println("Invalid");
 	        }
 	        else{
+	        	// this is not running
 	            for (int i=0; i<split_data.length; i++){
 	                if (i == 0){
 	                    splitted = split_data[0].split(" ");
@@ -416,19 +421,24 @@ public class Robot extends IterativeRobot {
 	
 	private void turnToBox(){
 		double Center_X = androidData();
-		double degreeOffset = (120 - Center_X)*DEGREES_PER_PIXEL;
+		//System.out.print("Offset: " + degreeOffset);
 		
 		// FIXME: Already removed the not before turnLeft/ turnRight
-		if (Center_X > 120){
-			System.out.println("Should be turning left");
-			while (turnLeft(gyroscope.getAngle()%360 - degreeOffset)){
-				stop();
+		if (Center_X > 170 && Center_X != 0){
+			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_LEFT;
+			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
+
+			System.out.println("Should be turning left, Offset: " + degreeOffset);
+			while (gyroscope.getAngle()%360 > boxAngle){
+				turnLeft(boxAngle);
 			}
 		}
-		if (Center_X < 120){
-			System.out.println("Should be turning right");
-			while (turnRight(gyroscope.getAngle()%360 - degreeOffset)){
-				stop();
+		if (Center_X < 170 && Center_X != 0){
+			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_RIGHT;
+			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
+			System.out.println("Should be turning right, Offset: " + degreeOffset);
+			while(gyroscope.getAngle()%360 < boxAngle){
+				turnRight(boxAngle);
 			}
 		}
 		else{
