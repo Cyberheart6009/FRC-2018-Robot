@@ -671,7 +671,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									System.out.println("Gripper Activated and moved straight");
 									timerStart = System.currentTimeMillis();
 								} else {
-									gripperGroup.set(1);
+									gripperGroup.set(-1);
 								}
 								break;
 							}
@@ -687,7 +687,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									System.out.println("Gripper Activated and moved straight");
 									timerStart = System.currentTimeMillis();
 								} else {
-									gripperGroup.set(1);
+									gripperGroup.set(-1);
 								}
 								break;
 							}
@@ -1063,7 +1063,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									System.out.println("Gripper Activated and moved straight");
 									timerStart = System.currentTimeMillis();
 								} else {
-									gripperGroup.set(1);
+									gripperGroup.set(-1);
 								}
 								break;
 							}
@@ -1079,7 +1079,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									System.out.println("Gripper Activated and moved straight");
 									timerStart = System.currentTimeMillis();
 								} else {
-									gripperGroup.set(1);
+									gripperGroup.set(-1);
 								}
 								break;
 							}
