@@ -555,24 +555,848 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		if (positionSelected == "left" || positionSelected == "right") {
 			//These are combined under 1 if section because they both start with switch
 			if (movementSelected == "switchSwitch" || movementSelected == "switchScale") {
-				if (gameData.charAt(0) == 'L') {
-					// TODO Insert Code to move the Robot to the left side of the switch and drop a box into it
-					if (movementSelected == "switchSwitch") {
-						// TODO Insert Code to pick up box and plant it in switch
-						
+				switch (autoStep) {
+				case Straight1:
+					if (driveDistanceStraight(0, 220, 0.5)){
+						autoStep = Step.Turn1;
+						System.out.println("Moved Straight");
+						timerStart = System.currentTimeMillis();
 					}
-					if (movementSelected == "switchScale" && gameData.charAt(1) == 'L') {
-						// TODO Insert Code to pick up box and move to the left side of the scale
-						
+					break;
+				case Turn1:
+					if (positionSelected == "left") {
+						if (turnInPlace(90)) {
+						  	resetEncoders();
+							autoStep = Step.Straight2;
+							System.out.println("Turned to 90");
+							timerStart = System.currentTimeMillis();
+						}
 					}
-					if (movementSelected == "switchScale" && gameData.charAt(1) == 'R') {
-						// TODO Insert Code to pick up box and move to the right side of the scale
+					if (positionSelected == "right") {
+						if (turnInPlace(-90)) {
+						  	resetEncoders();
+							autoStep = Step.Straight2;
+							System.out.println("Turned to -90");
+							timerStart = System.currentTimeMillis();
+						}
 					}
+					break;
 				}
+					if (gameData.charAt(0) == 'L') {
+						switch (autoStep) {
+						case Straight2:
+							if (positionSelected == "left") {
+								if (driveDistanceStraight(90, 50, 0.5)){
+									autoStep = Step.Turn2;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							if (positionSelected == "right") {
+								if (driveDistanceStraight(-90, 246, 0.5)){
+									autoStep = Step.Turn2;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							break;
+						case Turn2:
+							if (positionSelected == "left") {
+								if (turnInPlace(180)) {
+								  	resetEncoders();
+									autoStep = Step.Straight3;
+									System.out.println("Turned to 180");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							if (positionSelected == "right") {
+								if (turnInPlace(-180)) {
+								  	resetEncoders();
+									autoStep = Step.Straight3;
+									System.out.println("Turned to -180");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							break;
+						case Straight3:
+							if (positionSelected == "left") {
+								if (driveDistanceStraight(180, 11, 0.5)){
+									autoStep = Step.Elevator1;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							if (positionSelected == "right") {
+								if (driveDistanceStraight(-180, 11, 0.5)){
+									autoStep = Step.Elevator1;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							break;
+						case Elevator1:
+							if (elevatorAscend(20, 0.8)) {
+								autoStep = Step.Gripper1;
+								System.out.println("Elevator Ascended");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case Gripper1:
+							if (System.currentTimeMillis() - timerStart >= 3000) {
+								autoStep = Step.Elevator2;
+								System.out.println("Gripper Outed");
+								timerStart = System.currentTimeMillis();
+							} else {
+								gripperGroup.set(1);
+							}
+							break;
+						case Elevator2:
+							if (elevatorDescend(0, 0.8)) {
+								resetEncoders();
+								autoStep = Step.GripStraight1;
+								System.out.println("Elevator Descended");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case GripStraight1:
+							if (positionSelected == "left") {
+								if (driveDistanceStraight(180, 13, 0.3)){
+									resetEncoders();
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Elevator3;
+									}
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Straight4;
+									}
+									System.out.println("Gripper Activated and moved straight");
+									timerStart = System.currentTimeMillis();
+								} else {
+									gripperGroup.set(1);
+								}
+								break;
+							}
+							if (positionSelected == "right") {
+								if (driveDistanceStraight(-180, 13, 0.3)){
+									resetEncoders();
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Elevator3;
+									}
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Straight4;
+									}
+									System.out.println("Gripper Activated and moved straight");
+									timerStart = System.currentTimeMillis();
+								} else {
+									gripperGroup.set(1);
+								}
+								break;
+							}
+						}
+							if (movementSelected == "switchSwitch") {
+								switch (autoStep) {
+								case Elevator3:
+									if (elevatorAscend(20, 0.8)) {
+										autoStep = Step.Gripper2;
+										System.out.println("Elevator Ascended");
+										timerStart = System.currentTimeMillis();
+									}
+									break;
+								case Gripper2:
+									if (System.currentTimeMillis() - timerStart >= 3000) {
+										autoStep = Step.Done;
+										System.out.println("Gripper Outed");
+										timerStart = System.currentTimeMillis();
+									} else {
+										gripperGroup.set(1);
+									}
+									break;
+								case Done:
+									System.out.println("Auto left or right, switchSwitch, gameData: L__ has been completed");
+									break;
+								}
+								
+							}
+							if (movementSelected == "switchScale") {
+								if (gameData.charAt(1) == 'L') {
+									switch (autoStep) {
+									case Straight4:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(180, -24, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-180, -24, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn3:
+										if (positionSelected == "left") {
+											if (turnInPlace(270)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to 270");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(-90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to -270");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight5:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(270, 60, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-90, 60, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn4:
+										if (positionSelected == "left") {
+											if (turnInPlace(360)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to 360");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(0)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to -360");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight6:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(360, 95, 0.5)){
+												autoStep = Step.Turn5;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(0, 95, 0.5)){
+												autoStep = Step.Turn5;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn5:
+										if (positionSelected == "left") {
+											if (turnInPlace(450)) {
+											  	resetEncoders();
+												autoStep = Step.Straight7;
+												System.out.println("Turned to 450");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight7;
+												System.out.println("Turned to -450");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight7:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(450, 32, 0.5)){ //XXX: The distance is probably wrong
+												autoStep = Step.Elevator3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(90, 32, 0.5)){ //XXX: The distance is probably wrong
+												autoStep = Step.Elevator3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Elevator3:
+										if (elevatorAscend(20, 0.8)) {
+											autoStep = Step.Gripper2;
+											System.out.println("Elevator Ascended");
+											timerStart = System.currentTimeMillis();
+										}
+										break;
+									case Gripper2:
+										if (System.currentTimeMillis() - timerStart >= 3000) {
+											autoStep = Step.Done;
+											System.out.println("Gripper Outed");
+											timerStart = System.currentTimeMillis();
+										} else {
+											gripperGroup.set(1);
+										}
+										break;
+									case Done:
+										System.out.println("Auto left or right, switchSwitch, gameData: LL_ has been completed");
+										break;
+									}
+								}
+								if (gameData.charAt(1) == 'R') {
+									switch (autoStep) {
+									case Straight4:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(180, -23, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-180, -23, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn3:
+										if (positionSelected == "left") {
+											if (turnInPlace(90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to 90");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to -90");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight5:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(90, 214, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(90, 214, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn4:
+										if (positionSelected == "left") {
+											if (turnInPlace(0)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to 360");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(0)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to -360");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight6:
+										if (driveDistanceStraight(0, 95, 0.5)){
+											autoStep = Step.Turn5;
+											System.out.println("Moved Straight");
+											timerStart = System.currentTimeMillis();
+										}
+										break;
+									case Turn5:
+											if (turnInPlace(-90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight7;
+												System.out.println("Turned to 450");
+												timerStart = System.currentTimeMillis();
+											}
+										break;
+									case Straight7:
+										if (driveDistanceStraight(-90, 32, 0.5)){ //The distance is probably wrong
+											autoStep = Step.Elevator3;
+											System.out.println("Moved Straight");
+											timerStart = System.currentTimeMillis();
+										}
+										break;
+									case Elevator3:
+										if (elevatorAscend(20, 0.8)) {
+											autoStep = Step.Gripper2;
+											System.out.println("Elevator Ascended");
+											timerStart = System.currentTimeMillis();
+										}
+										break;
+									case Gripper2:
+										if (System.currentTimeMillis() - timerStart >= 3000) {
+											autoStep = Step.Done;
+											System.out.println("Gripper Outed");
+											timerStart = System.currentTimeMillis();
+										} else {
+											gripperGroup.set(1);
+										}
+										break;
+									case Done:
+										System.out.println("Auto left or right, switchSwitch, gameData: LR_ has been completed");
+										break;
+									}
+								}
+							}
+					}
+					//Our switch is on the right
+					if (gameData.charAt(0) == 'R') {
+						switch (autoStep) {
+						case Straight2:
+							if (positionSelected == "left") {
+								if (driveDistanceStraight(90, 246, 0.5)){
+									autoStep = Step.Turn2;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							if (positionSelected == "right") {
+								if (driveDistanceStraight(-90, 50, 0.5)){
+									autoStep = Step.Turn2;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							break;
+						case Turn2:
+							if (positionSelected == "left") {
+								if (turnInPlace(180)) {
+								  	resetEncoders();
+									autoStep = Step.Straight3;
+									System.out.println("Turned to 180");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							if (positionSelected == "right") {
+								if (turnInPlace(-180)) {
+								  	resetEncoders();
+									autoStep = Step.Straight3;
+									System.out.println("Turned to -180");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							break;
+						case Straight3:
+							if (positionSelected == "left") {
+								if (driveDistanceStraight(180, 11, 0.5)){
+									autoStep = Step.Elevator1;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							if (positionSelected == "right") {
+								if (driveDistanceStraight(-180, 11, 0.5)){
+									autoStep = Step.Elevator1;
+									System.out.println("Moved Straight");
+									timerStart = System.currentTimeMillis();
+								}
+							}
+							break;
+						case Elevator1:
+							if (elevatorAscend(20, 0.8)) {
+								autoStep = Step.Gripper1;
+								System.out.println("Elevator Ascended");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case Gripper1:
+							if (System.currentTimeMillis() - timerStart >= 3000) {
+								autoStep = Step.Elevator2;
+								System.out.println("Gripper Outed");
+								timerStart = System.currentTimeMillis();
+							} else {
+								gripperGroup.set(1);
+							}
+							break;
+						case Elevator2:
+							if (elevatorDescend(0, 0.8)) {
+								resetEncoders();
+								autoStep = Step.GripStraight1;
+								System.out.println("Elevator Descended");
+								timerStart = System.currentTimeMillis();
+							}
+							break;
+						case GripStraight1:
+							if (positionSelected == "left") {
+								if (driveDistanceStraight(180, 13, 0.3)){
+									resetEncoders();
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Elevator3;
+									}
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Straight4;
+									}
+									System.out.println("Gripper Activated and moved straight");
+									timerStart = System.currentTimeMillis();
+								} else {
+									gripperGroup.set(1);
+								}
+								break;
+							}
+							if (positionSelected == "right") {
+								if (driveDistanceStraight(-180, 13, 0.3)){
+									resetEncoders();
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Elevator3;
+									}
+									if (movementSelected == "switchSwitch") {
+										autoStep = Step.Straight4;
+									}
+									System.out.println("Gripper Activated and moved straight");
+									timerStart = System.currentTimeMillis();
+								} else {
+									gripperGroup.set(1);
+								}
+								break;
+							}
+						}
+							if (movementSelected == "switchSwitch") {
+								switch (autoStep) {
+								case Elevator3:
+									if (elevatorAscend(20, 0.8)) {
+										autoStep = Step.Gripper2;
+										System.out.println("Elevator Ascended");
+										timerStart = System.currentTimeMillis();
+									}
+									break;
+								case Gripper2:
+									if (System.currentTimeMillis() - timerStart >= 3000) {
+										autoStep = Step.Done;
+										System.out.println("Gripper Outed");
+										timerStart = System.currentTimeMillis();
+									} else {
+										gripperGroup.set(1);
+									}
+									break;
+								case Done:
+									System.out.println("Auto left or right, switchSwitch, gameData: L__ has been completed");
+									break;
+								}
+								
+							}
+							if (movementSelected == "switchScale") {
+								if (gameData.charAt(1) == 'R') {
+									switch (autoStep) {
+									case Straight4:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(180, -24, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-180, -24, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn3:
+										if (positionSelected == "left") {
+											if (turnInPlace(90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to 90");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(-270)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to -270");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight5:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(90, 60, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-270, 60, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn4:
+										if (positionSelected == "left") {
+											if (turnInPlace(0)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to 0");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(-360)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to -360");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight6:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(0, 95, 0.5)){
+												autoStep = Step.Turn5;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-360, 95, 0.5)){
+												autoStep = Step.Turn5;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn5:
+										if (positionSelected == "left") {
+											if (turnInPlace(-90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight7;
+												System.out.println("Turned to -90");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(-450)) {
+											  	resetEncoders();
+												autoStep = Step.Straight7;
+												System.out.println("Turned to -450");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight7:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(-90, 32, 0.5)){ //XXX: The distance is probably wrong
+												autoStep = Step.Elevator3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-450, 32, 0.5)){ //XXX: The distance is probably wrong
+												autoStep = Step.Elevator3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Elevator3:
+										if (elevatorAscend(20, 0.8)) {
+											autoStep = Step.Gripper2;
+											System.out.println("Elevator Ascended");
+											timerStart = System.currentTimeMillis();
+										}
+										break;
+									case Gripper2:
+										if (System.currentTimeMillis() - timerStart >= 3000) {
+											autoStep = Step.Done;
+											System.out.println("Gripper Outed");
+											timerStart = System.currentTimeMillis();
+										} else {
+											gripperGroup.set(1);
+										}
+										break;
+									case Done:
+										System.out.println("Auto left or right, switchSwitch, gameData: LL_ has been completed");
+										break;
+									}
+								}
+								if (gameData.charAt(1) == 'L') {
+									switch (autoStep) {
+									case Straight4:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(180, -23, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-180, -23, -0.5)){
+												autoStep = Step.Turn3;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn3:
+										if (positionSelected == "left") {
+											if (turnInPlace(270)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to 270");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(-90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight5;
+												System.out.println("Turned to -90");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight5:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(270, 214, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(-90, 214, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn4:
+										if (positionSelected == "left") {
+											if (turnInPlace(360)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to 360");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(0)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to 0");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight6:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(360, 95, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(0, 95, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Turn5:
+										if (positionSelected == "left") {
+											if (turnInPlace(450)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to 360");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (turnInPlace(90)) {
+											  	resetEncoders();
+												autoStep = Step.Straight6;
+												System.out.println("Turned to 0");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Straight7:
+										if (positionSelected == "left") {
+											if (driveDistanceStraight(450, 32, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										if (positionSelected == "right") {
+											if (driveDistanceStraight(90, 32, 0.5)){
+												autoStep = Step.Turn4;
+												System.out.println("Moved Straight");
+												timerStart = System.currentTimeMillis();
+											}
+										}
+										break;
+									case Elevator3:
+										if (elevatorAscend(20, 0.8)) {
+											autoStep = Step.Gripper2;
+											System.out.println("Elevator Ascended");
+											timerStart = System.currentTimeMillis();
+										}
+										break;
+									case Gripper2:
+										if (System.currentTimeMillis() - timerStart >= 3000) {
+											autoStep = Step.Done;
+											System.out.println("Gripper Outed");
+											timerStart = System.currentTimeMillis();
+										} else {
+											gripperGroup.set(1);
+										}
+										break;
+									case Done:
+										System.out.println("Auto left or right, switchSwitch, gameData: LR_ has been completed");
+										break;
+									}
+								}
+							}
+					}
 			}
 			//These are combined under 1 if section because they both start with scale
 			if (movementSelected == "ScaleScale" || movementSelected == "ScaleSwitch") {
-				
+				//TODO The scale start stuff
 			}
 		}
 		//This code is activated if the robot is in the center
@@ -635,7 +1459,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 								System.out.println("Gripper Outed");
 								timerStart = System.currentTimeMillis();
 							} else {
-								gripperGroup.set(0.3);
+								gripperGroup.set(1);
 							}
 							break;
 						case Elevator2:
@@ -669,11 +1493,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 								System.out.println("Gripper Activated and moved straight");
 								timerStart = System.currentTimeMillis();
 							} else {
-								gripperGroup.set(0.3);
+								gripperGroup.set(1);
 							}
-							break;
-						case Done:
-							System.out.println("Auto Has finished");
 							break;
 						}
 							//Code if the robot will drop another box on the switch.
@@ -708,7 +1529,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 										System.out.println("Gripper Outed");
 										timerStart = System.currentTimeMillis();
 									} else {
-										gripperGroup.set(0.3);
+										gripperGroup.set(1);
 									}
 									break;
 								case Done:
@@ -774,7 +1595,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 												System.out.println("Gripper Outed");
 												timerStart = System.currentTimeMillis();
 											} else {
-												gripperGroup.set(0.3);
+												gripperGroup.set(1);
 											}
 											break;
 										case Done:
@@ -846,7 +1667,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 												System.out.println("Gripper Outed");
 												timerStart = System.currentTimeMillis();
 											} else {
-												gripperGroup.set(0.3);
+												gripperGroup.set(1);
 											}
 											break;
 										case Done:
@@ -902,7 +1723,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 								System.out.println("Gripper Outed");
 								timerStart = System.currentTimeMillis();
 							} else {
-								gripperGroup.set(0.3);
+								gripperGroup.set(1);
 							}
 							break;
 						case Elevator2:
@@ -936,7 +1757,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 								System.out.println("Gripper Activated and moved straight");
 								timerStart = System.currentTimeMillis();
 							} else {
-								gripperGroup.set(0.3);
+								gripperGroup.set(1);
 							}
 							break;
 						case Done:
@@ -975,7 +1796,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 										System.out.println("Gripper Outed");
 										timerStart = System.currentTimeMillis();
 									} else {
-										gripperGroup.set(0.3);
+										gripperGroup.set(1);
 									}
 									break;
 								case Done:
@@ -1041,7 +1862,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 												System.out.println("Gripper Outed");
 												timerStart = System.currentTimeMillis();
 											} else {
-												gripperGroup.set(0.3);
+												gripperGroup.set(1);
 											}
 											break;
 										case Done:
@@ -1113,7 +1934,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 												System.out.println("Gripper Outed");
 												timerStart = System.currentTimeMillis();
 											} else {
-												gripperGroup.set(0.3);
+												gripperGroup.set(1);
 											}
 											break;
 										case Done:
@@ -1127,7 +1948,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			}
 			//These are combined under 1 if section because they both start with scale
 			if (movementSelected == "ScaleScale" || movementSelected == "ScaleSwitch") {
-				
+				//TODO Scale Start Stuff
 			}
 			updateSmartDashboard();
 		}
@@ -1260,14 +2081,30 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	public boolean driveDistanceStraight(double heading, double distance, double speed) {
 		System.out.println("driveDistanceStraight()");
-		if (getDistance() > distance){
-			System.out.println("current distance end");
-			stop();
-			return true;
+		if (distance > 0) { //then it will move forward
+			if (getDistance() > distance){
+				System.out.println("current distance end");
+				stop();
+				return true;
+			}
+			else {
+				driveStraight(heading, speed);
+				return false;
+			}
+		}
+		if (distance < 0) { //then it will move backward
+			if (getDistance() < distance){
+				System.out.println("current distance end");
+				stop();
+				return true;
+			}
+			else {
+				driveStraight(heading, speed);
+				return false;
+			}
 		}
 		else {
-			driveStraight(heading, speed);
-			return false;
+			return true;
 		}
 	}
 	
