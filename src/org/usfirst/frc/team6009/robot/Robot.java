@@ -37,8 +37,6 @@ import org.spectrum3847.RIOdroid.RIOadb;
 import org.spectrum3847.RIOdroid.RIOdroid;
 
 import com.kauailabs.navx.frc.AHRS;
-=======
->>>>>>> rz
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -47,15 +45,6 @@ import com.kauailabs.navx.frc.AHRS;
  * creating this project, you must also update the build.properties file in the
  * project.
  */
-<<<<<<< HEAD
-
-/*TODO: 	- Robot Tip prevention (if angle > threshold) -> take over drive train motors and reverse to prevent the tip
- * 			- Function to get phone logs and parse the data in order to retrieve and calculate the location of the box
- * 			
-*/
-
-public class Robot extends IterativeRobot {
-=======
 public class Robot extends IterativeRobot implements PIDOutput {	
 	String gameData;
 	// Auto Modes Setup
@@ -93,14 +82,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}
 	public Step autoStep = Step.Straight1;
 	public long timerStart;
->>>>>>> rz
-	
-	// Auto Modes Setup
-	private static final String kDefaultAuto = "Default";
-	private static final String kCustomAuto = "My Auto";
-	private static final String SquareAuto = "Square";
-	private String m_autoSelected;
-	
+
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
@@ -112,33 +94,20 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevatorOne, elevatorTwo, climberOne, climberTwo, gripperOne, gripperTwo;
 	
 	// Speed controller group used for new differential drive class
-<<<<<<< HEAD
-	SpeedControllerGroup leftChassis, rightChassis, climberGroup, gripperGroup, elevator;
-=======
 	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, climberGroup, gripperGroup;
->>>>>>> rz
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
 	
-	//LimitSwitch
-	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber;
-	
 	// Joystick Definitions
 	Joystick driver;
-<<<<<<< HEAD
 	Joystick operator;
-	
-	//Boolean for buttons
-	boolean aButton, bButton, xButton, yButton, aButtonOp, bButtonOp, xButtonOp, yButtonOp;
-=======
 	
 	//Limit Switch
 	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber, limitSwitchGripper;
 	
 	// Boolean for buttons
-	boolean aButton, bButton, yButton, xButton, leftBumper, rightBumper, start, select, leftThumbPush, rightThumbPush;
->>>>>>> rz
+	boolean aButton, bButton, yButton, xButton, leftBumper, rightBumper, start, select, leftThumbPush, rightThumbPush, aButtonOp, bButtonOp, xButtonOp, yButtonOp;
 	
 	// Analog Sensors
 	AnalogInput ultrasonic_yellow, ultrasonic_black;
@@ -169,26 +138,20 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		m_chooser.addObject("Square Mode", SquareAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
 		
-<<<<<<< HEAD
-=======
 		//Defines limit switch ports
 		limitSwitchUpElevator = new DigitalInput(4);
 		limitSwitchDownElevator =  new DigitalInput(5);
 		limitSwitchUpClimber = new DigitalInput(6);
 		limitSwitchDownClimber = new DigitalInput(7);
 		limitSwitchGripper = new DigitalInput(8);
->>>>>>> rz
 		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
 		leftBack = new Spark(1);
 		rightFront = new Spark(2);
 		rightBack = new Spark(3);
-<<<<<<< HEAD
 		climberOne = new Spark(4);
 		climberTwo = new Spark(5);
-=======
->>>>>>> rz
 		elevatorOne = new Spark(6);
 		elevatorTwo = new Spark(7);
 		climberOne = new Spark(4);
@@ -196,7 +159,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		gripperOne = new Spark(8);
 		gripperTwo = new Spark(9);
 		
-<<<<<<< HEAD
 		//Inverting Sparks
 		//elevatorOne.setInverted(true);
 		gripperTwo.setInverted(true);
@@ -204,28 +166,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		// Defines Joystick ports
 		driver = new Joystick(0);
 		operator = new Joystick(1);
-		
-		//LimitSwitch Port Assignment
-		limitSwitchUpElevator = new DigitalInput(4);
-		limitSwitchDownElevator =  new DigitalInput(5);
-		limitSwitchUpClimber = new DigitalInput(6);
-		limitSwitchDownClimber = new DigitalInput(7);
 
-=======
 		//Creating the Joystick object
 		driver = new Joystick(0);
-		
->>>>>>> rz
+
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
 		gripperGroup = new SpeedControllerGroup(gripperOne, gripperTwo);
-<<<<<<< HEAD
 		elevator = new SpeedControllerGroup(elevatorOne, elevatorTwo);
-=======
->>>>>>> rz
-		
+
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
 		
@@ -248,7 +199,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		//gyroscope = new ADXRS450_Gyro();
 		gyroscope = new AHRS(SPI.Port.kMXP);
 		//gyroscope.calibrate();
-<<<<<<< HEAD
 	
 		// Initialize ADB Communication 
 		
@@ -266,8 +216,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		else{
 			System.out.println("ADB INIT NOT RAN");
 		}
-	}
-=======
 		
 		rotationPID = new PIDController(KpTurn, Ki, Kd, gyroscope, this);
 		
@@ -300,7 +248,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 * This function is called periodically during autonomous.
 	 */
 	@Override
-	public void autonomousPeriodic() {
+	/*public void autonomousPeriodic() {
 		updateSmartDashboard();
 		if (m_autoSelected == SquareAuto) {
 			System.out.println("Square Auto Is Operating");
@@ -330,9 +278,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			}
 		}
 		
-<<<<<<< HEAD
-		return;
-=======
 		return;*/
 	
 	public void autonomousPeriodic() {
@@ -753,7 +698,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				
 			}
 		}
->>>>>>> rz
 	}
 
 	/**
@@ -766,10 +710,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		//rightChassis.set(0.1);
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
-<<<<<<< HEAD
-		chassis.arcadeDrive(driver.getX(), -driver.getY());
-		//tipPrevention();
-=======
 		if (controlInvert == isInverted.FALSE) {
 			chassis.arcadeDrive(driver.getX(), -driver.getY());
 		} 
@@ -777,18 +717,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			chassis.arcadeDrive(-driver.getX(), driver.getY());
 		}
 		
->>>>>>> rz
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
 		yButton = driver.getRawButton(4);
-<<<<<<< HEAD
-		
 		aButtonOp = operator.getRawButton(1);
 		bButtonOp = operator.getRawButton(2);
 		xButtonOp = operator.getRawButton(3);
 		yButtonOp = operator.getRawButton(4);
-=======
 		leftBumper = driver.getRawButton(5);
 		rightBumper = driver.getRawButton(6);
 		select = driver.getRawButton(7);
@@ -850,7 +786,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		//System.out.println(rotationPID.get());
 		updateSmartDashboard();
 	}
->>>>>>> rz
 
 	/**
 	 * This function is called periodically during test mode.
@@ -860,7 +795,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	}
 	
 	public void disabledPeriodic(){
-<<<<<<< HEAD
 		updateSmartDashboard();
 	}
 	
@@ -870,10 +804,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	//--------------------------//
 	//		Custom Functions	//
 	//--------------------------//
-=======
-		//System.out.println(rotationPID);
-		updateSmartDashboard();
-	}
 	
 	public void PIDDriveStraight() {
 		rotationPID.setEnabled(true);
@@ -959,14 +889,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			System.out.println("The squareDrive() function could not find a valid squareStep int");
 		}
 	}
->>>>>>> rz
 	
 	public void resetEncoders(){
 		leftEncoder.reset();
 		rightEncoder.reset();
 	}
 	
-<<<<<<< HEAD
 	// Calculates and returns the Robot distance using the encoders attached to each side of the drive train
 	public double getDistance(){
 		return ((double)(leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
@@ -977,7 +905,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	}
 	
 	// Calculates and returns the distance from the Yellow Ultrasonic Distance Sensor
-=======
 	public double getElevatorHeight(){
 		return ((double)(elevatorEncoder.get() / (ELEVATOR_ENCODER_COUNTS_PER_INCH * 2)));
 	}
@@ -987,7 +914,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		return (double)((leftEncoder.get() + rightEncoder.get()) / (ENCODER_COUNTS_PER_INCH * 2));
 	}
 
->>>>>>> rz
 	public double getUltrasonicYellowDistance(){
 		// Calculates distance in centimeters from ultrasonic distance sensor
 		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
@@ -1038,7 +964,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rightChassis.set(rightSpeed);
 	}
 	
-<<<<<<< HEAD
 	private void stop(){
 		leftBack.set(0);
 		leftFront.set(0);
@@ -1047,9 +972,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	}
 	
 	//slow motor speeds while turning
-	
-=======
->>>>>>> rz
 	private boolean turnRight(double targetAngle){
 		// We want to turn in place to 60 degrees 
 		leftBack.set(0.35);
@@ -1066,7 +988,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		}
 		return false;
 	}
-<<<<<<< HEAD
+	
 	private boolean turnLeft(double targetAngle){
 		// We want to turn in place to 60 degrees 
 		leftBack.set(-0.35);
@@ -1096,7 +1018,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
 		
 		SmartDashboard.putNumber("Robot Speed", robotSpeed());
-=======
+
 	
 	private void PIDTurn(double setpoint) {
 		resetEncoders();
@@ -1126,8 +1048,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	@Override
 	public void pidWrite(double output) {
-		// TODOish Auto-generated method stub
->>>>>>> rz
-		
+		// TODOish Auto-generated method stub		
 	}
 }
