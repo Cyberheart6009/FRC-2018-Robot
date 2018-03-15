@@ -228,7 +228,53 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		double height = getElevatorheight();
 		if (positionSelected.equalsIgnoreCase(left)) {
 			if (movementSelected.equalsIgnoreCase(Switch)) {
-				
+				if (gameData.length() > 0) {
+					if (gameData.charAt(0) == 'L') {
+						System.out.println("leftSwitch1/2");
+						switch (autoStep) {
+						case Straight:
+							if (distance < 180) {
+								driveStraight(0, 0.4);
+							} else {
+								stop();
+								autoStep = Step.Turn;
+							}
+							break;
+						case Turn:
+							if (turnInPlace(90)) {
+								resetEncoders();
+								rotationPID.setEnabled(false);
+								autoStep = Step.Straight2;
+							}
+							break;
+						case Straight2:
+							if (distance < 38) {
+								driveStraight(90, 0.4);
+								gripper.set(0.5);
+							} else {
+								completeStop();
+								autoStep = Step.CubeOut;
+							}
+							break;
+						case CubeOut:
+							if (height < 40) {
+								elevator.set(0.3);
+							} else {
+								if (!limitSwitchGripper.get()) {
+									completeStop();
+									autoStep = Step.Done;
+								} else {
+									gripper.set(0.5);
+								}
+							}
+							break;
+						case Done:
+							completeStop();
+						}
+					} else {
+						System.out.println("leftSwitch3/4");
+					}
+				}
 			} else if (movementSelected.equalsIgnoreCase(SwitchSwitch)) {
 				if (gameData.length() > 0) {
 					if (gameData.charAt(0) == 'L') {
@@ -247,7 +293,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							if (turnInPlace(90)) {
 							  	resetEncoders();
 								rotationPID.setEnabled(false);
-								autoStep = Step.Straight;
+								autoStep = Step.Straight2;
 							}
 							break;
 						case Straight2:
@@ -279,7 +325,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case CubeIn:
-							if (distance < 24){
+							if (distance < 22){
 								driveStraight(180, 0.4);
 								gripper.set(-0.5);
 							}
@@ -308,19 +354,97 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						System.out.println("leftSwitchSwitch3/4");
 				}
 			} else if (movementSelected.equalsIgnoreCase(Scale)) {
-				
+				if (gameData.length() > 0)) {
+					if (gameData.charAt(1) == 'L') {
+						System.out.println("leftScale1/3");
+					} else {
+						System.out.println("leftScale2/4");
+					}
+				}
 			} else if (movementSelected.equalsIgnoreCase(ScaleSwitch)) {
-				
+				if (gameData.lenght() > 0) {
+					if (gameData.charAt(1) == 'L') {
+						if (gameData.charAt(0) == 'L') {
+							System.out.println("leftScaleSwitch1");
+						} else {
+							System.out.println("leftScaleSwitch3");
+						}
+					} else {
+						if (gameData.charAt(0) == 'L') {
+							System.out.println("leftScaleSwitch2");
+						} else {
+							System.out.println("leftScaleSwitch4");
+						}
+					}
+				}
 			} else if (movementSelected.equalsIgnoreCase(SwitchScale)) {
-				
+				if (gameData.length() > 0) {
+					if (gameData.charAt(0) == 'L') {
+						if (gameData.charAt(1) == 'L') {
+							System.out.println("leftSwitchScale1");
+						} else {
+							System.out.println("leftSwitchScale2");
+						}
+					} else {
+						if (gameData.charAt(1) == 'L') {
+							System.out.println("leftSwitchScale3");
+						} else {
+							System.out.println("leftSwitchScale4");
+						}
+					}
+				}
 			} else if (movementSelected.equalsIgnoreCase(Portal)) {
 				
-			} else {
-				completeStop();
-			}
+			} 
 		} else if (positionSelected.equalsIgnoreCase(right)) {
 			if (movementSelected.equalsIgnoreCase(Switch)) {
-				
+				if (gameData.length() > 0) {
+					if (gameData.charAt(0) == 'L') {
+						System.out.println("rightSwitch1/2");
+					} else {
+						System.out.println("rightSwitch3/4");
+						switch (autoStep) {
+						case Straight:
+							if (distance < 180) {
+								driveStraight(0, 0.4);
+							} else {
+								stop();
+								autoStep = Step.Turn;
+							}
+							break;
+						case Turn:
+							if (turnInPlace(-90)) {
+								resetEncoders();
+								rotationPID.setEnabled(false);
+								autoStep = Step.Straight2;
+							}
+							break;
+						case Straight2:
+							if (distance < 38) {
+								driveStraight(-90, 0.4);
+								gripper.set(0.5);
+							} else {
+								completeStop();
+								autoStep = Step.CubeOut;
+							}
+							break;
+						case CubeOut:
+							if (height < 40) {
+								elevator.set(0.3);
+							} else {
+								if (!limitSwitchGripper.get()) {
+									completeStop();
+									autoStep = Step.Done;
+								} else {
+									gripper.set(0.5);
+								}
+							}
+							break;
+						case Done:
+							completeStop();
+						}
+					}
+				}
 			} else if (movementSelected.equalsIgnoreCase(SwitchSwitch)) {
 				if (gameData.length() > 0) {
 					if (gameData.charAt(0) == 'L') {
@@ -341,7 +465,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							if (turnInPlace(-90)) {
 							  	resetEncoders();
 								rotationPID.setEnabled(false);
-								autoStep = Step.Straight;
+								autoStep = Step.Straight2;
 							}
 							break;
 						case Straight2:
@@ -373,7 +497,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case CubeIn:
-							if (distance < 24){
+							if (distance < 22){
 								driveStraight(-180, 0.4);
 								gripper.set(-0.5);
 							}
@@ -407,14 +531,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				
 			} else if (movementSelected.equalsIgnoreCase(Portal)) {
 				
-			} else {
-				completeStop();
-			}
+			} 
 		} else if (positionSelected.equalsIgnoreCase(center)){
 			
-		} else {
-			completeStop();
-		}
+		} 
 		}
 		}
 	}
