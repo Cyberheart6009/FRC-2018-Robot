@@ -322,7 +322,97 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				completeStop();
 			}
 		} else if (positionSelected.equalsIgnoreCase(right)) {
-			
+			if (movementSelected.equalsIgnoreCase(Switch)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(SwitchSwitch)) {
+				if (gameData.length() > 0) {
+					if (gameData.charAt(0) == 'L') {
+						System.out.println("rightSwitchSwitch1/2");
+					} else {
+						System.out.println("rightSwitchSwitch3/4");
+						switch (autoStep) {
+						case Straight:
+							if (distance < 220) {
+								driveStraight(0, 0.4);
+							}
+							else {
+								stop();
+								autoStep = Step.Turn;
+							}
+							break;
+						case Turn: 
+							if (turnInPlace(-90)) {
+							  	resetEncoders();
+								rotationPID.setEnabled(false);
+								autoStep = Step.Straight;
+							}
+							break;
+						case Straight2:
+							if (distance < 50) {
+								driveStraight(-90, 0.4);
+							}
+							else {
+								stop();
+								autoStep = Step.Turn2;
+							}
+							break;
+						case Turn2:
+							if (turnInPlace(-180)) {
+								resetEncoders();
+								rotationPID.setEnabled(false);
+								autoStep = Step.CubeOut;
+							}
+							break;
+						case CubeOut:
+							if (height < 40) {
+								elevator.set(0.3);
+							} else {
+								if (!limitSwitchGripper.get()) {
+									completeStop();
+									autoStep = Step.CubeIn;
+								} else {
+									gripper.set(0.5);
+								}
+							}
+							break;
+						case CubeIn:
+							if (distance < 24){
+								driveStraight(-180, 0.4);
+								gripper.set(-0.5);
+							}
+							else {
+								completeStop();
+								autoStep = Step.CubeOut2;
+							}
+							break;			
+						case CubeOut2:
+							if (height < 40) {
+								elevator.set(0.3);
+							} else {
+								if (!limitSwitchGripper.get()) {
+									completeStop();
+									autoStep = Step.Done;
+								} else {
+									gripper.set(0.5);
+								}
+							}
+							break;
+						case Done:
+							completeStop();
+							break;
+						}
+					}
+			} else if (movementSelected.equalsIgnoreCase(Scale)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(ScaleSwitch)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(SwitchScale)) {
+				
+			} else if (movementSelected.equalsIgnoreCase(Portal)) {
+				
+			} else {
+				completeStop();
+			}
 		} else if (positionSelected.equalsIgnoreCase(center)){
 			
 		} else {
