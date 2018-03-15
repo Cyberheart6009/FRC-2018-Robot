@@ -44,7 +44,6 @@ import com.kauailabs.navx.frc.AHRS;
 
 
 
-
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the IterativeRobot
