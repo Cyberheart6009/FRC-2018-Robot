@@ -306,8 +306,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						}
 					} else {
 						System.out.println("leftSwitchSwitch3/4");
-						
-					}
 				}
 			} else if (movementSelected.equalsIgnoreCase(Scale)) {
 				
@@ -417,7 +415,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		} else {
 			completeStop();
 		}
-		
+		}
+		}
 	}
 
 	/**
