@@ -250,9 +250,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						case Straight2:
 							if (distance < 38) {
 								driveStraight(90, 0.4);
-								gripper.set(0.5);
 							} else {
-								completeStop();
+								stop();
 								autoStep = Step.CubeOut;
 							}
 							break;
@@ -264,15 +263,35 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									completeStop();
 									autoStep = Step.Done;
 								} else {
-									gripper.set(0.5);
+									gripper.set(1);
 								}
 							}
 							break;
 						case Done:
 							completeStop();
+							break;
 						}
 					} else {
 						System.out.println("leftSwitch3/4");
+						switch (autoStep) {
+						case Straight:
+							if (distance < 220) {
+								driveStraight(0, 0.4);
+							} else {
+								stop();
+								autoStep = Step.Turn;
+							}
+							break;
+						case Turn:
+							if (turnInPlace(90)) {
+								resetEncoders();
+								rotationPID.setEnabled(false);
+								autoStep = Step.Straight2;
+							}
+							break;
+						case Straight2:
+							
+						}
 					}
 				}
 			} else if (movementSelected.equalsIgnoreCase(SwitchSwitch)) {
@@ -320,14 +339,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									completeStop();
 									autoStep = Step.CubeIn;
 								} else {
-									gripper.set(0.5);
+									gripper.set(1);
 								}
 							}
 							break;
 						case CubeIn:
 							if (distance < 22){
 								driveStraight(180, 0.4);
-								gripper.set(-0.5);
+								gripper.set(-1);
 							}
 							else {
 								completeStop();
@@ -342,7 +361,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									completeStop();
 									autoStep = Step.Done;
 								} else {
-									gripper.set(0.5);
+									gripper.set(1);
 								}
 							}
 							break;
@@ -422,9 +441,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						case Straight2:
 							if (distance < 38) {
 								driveStraight(-90, 0.4);
-								gripper.set(0.5);
 							} else {
-								completeStop();
+								stop();
 								autoStep = Step.CubeOut;
 							}
 							break;
@@ -436,12 +454,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									completeStop();
 									autoStep = Step.Done;
 								} else {
-									gripper.set(0.5);
+									gripper.set(1);
 								}
 							}
 							break;
 						case Done:
 							completeStop();
+							break;
 						}
 					}
 				}
@@ -492,14 +511,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									completeStop();
 									autoStep = Step.CubeIn;
 								} else {
-									gripper.set(0.5);
+									gripper.set(1);
 								}
 							}
 							break;
 						case CubeIn:
 							if (distance < 22){
 								driveStraight(-180, 0.4);
-								gripper.set(-0.5);
+								gripper.set(-1);
 							}
 							else {
 								completeStop();
@@ -514,7 +533,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									completeStop();
 									autoStep = Step.Done;
 								} else {
-									gripper.set(0.5);
+									gripper.set(1);
 								}
 							}
 							break;
