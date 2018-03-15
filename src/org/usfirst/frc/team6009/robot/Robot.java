@@ -83,7 +83,7 @@ public class Robot extends IterativeRobot {
 	DifferentialDrive chassis;
 	
 	//LimitSwitch
-	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber;
+	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber, cubeSwitch;
 	
 	// Joystick Definitions
 	Joystick driver;
@@ -147,6 +147,7 @@ public class Robot extends IterativeRobot {
 		limitSwitchDownElevator =  new DigitalInput(5);
 		limitSwitchUpClimber = new DigitalInput(6);
 		limitSwitchDownClimber = new DigitalInput(7);
+		cubeSwitch = new DigitalInput(8);
 
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
@@ -537,6 +538,8 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
 		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
+		
+		SmartDashboard.putBoolean("Cube Held", !(cubeSwitch.get()));
 		
 		SmartDashboard.putNumber("Robot Speed", robotSpeed());
 		
