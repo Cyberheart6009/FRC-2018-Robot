@@ -262,7 +262,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -353,7 +353,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -426,7 +426,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -512,7 +512,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case elevatorTwo:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -654,7 +654,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -673,7 +673,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case CubeOut:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.3);
 							} else {
 								if (!limitSwitchGripper.get()) {
@@ -746,7 +746,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -832,7 +832,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case elevatorTwo:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -933,7 +933,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -1002,7 +1002,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -1077,7 +1077,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -1163,7 +1163,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case elevatorTwo:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -1290,7 +1290,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -1309,7 +1309,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case CubeOut:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.3);
 							} else {
 								if (!limitSwitchGripper.get()) {
@@ -1382,7 +1382,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Elevator:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
@@ -1468,7 +1468,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case elevatorTwo:
-							if (height < 40) {
+							if (height < 25) {
 								elevator.set(0.4);
 							} else {
 								elevator.set(0.05);
