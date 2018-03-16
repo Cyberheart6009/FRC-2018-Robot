@@ -137,17 +137,14 @@ public class Robot extends IterativeRobot {
 		//Inverting Sparks
 		//elevatorOne.setInverted(true);
 		gripperTwo.setInverted(true);
-		
+		climberOne.setInverted(true);
 		// Defines Joystick ports
 		driver = new Joystick(0);
 		operator = new Joystick(1);
 		
 		//LimitSwitch Port Assignment
-		limitSwitchUpElevator = new DigitalInput(4);
-		limitSwitchDownElevator =  new DigitalInput(5);
-		limitSwitchUpClimber = new DigitalInput(6);
-		limitSwitchDownClimber = new DigitalInput(7);
-		cubeSwitch = new DigitalInput(8);
+
+		cubeSwitch = new DigitalInput(4);
 
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
@@ -283,37 +280,8 @@ public class Robot extends IterativeRobot {
 			gripperGroup.set(0);
 		}
 		
-		
-		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
-			elevator.set(operator.getRawAxis(1));
-		}
-		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(1) > 0)) { 
- 			elevator.set(0);
- 			System.out.println("UP ELEVATOR limit Switct being pressed while DOWN Joystick is pressed");
- 		}
-		if (!limitSwitchDownElevator.get() & (operator.getRawAxis(1) < 0)) { 
- 			elevator.set(0);
- 			System.out.println("DOWN ELEVATOR limit Switct being pressed while UP Joystick is pressed");
- 		}
-		//else {
-			//elevatorGroup.set(0);
-		//}
- 			/*
-		if (limitSwitchUpClimber.get() & limitSwitchDownClimber.get()) {
-			climberGroup.set(operator.getRawAxis(5));
-		}
-		
-		if (!limitSwitchUpClimber.get() & (operator.getRawAxis(5) > 0)) { 
- 			climberGroup.set(0);
- 			System.out.println("UP CLIMBER limit Switct being pressed while DOWN Joystick is pressed");	
- 		}
-		if (!limitSwitchDownClimber.get() & (operator.getRawAxis(5) < 0)) {
-			climberGroup.set(0);
- 			System.out.println("DOWN CLIMBER limit Switct being pressed while UP Joystick is pressed");	
- 		}
-		//else {
-			//climberGroup.set(0); 
-		//}*/
+		climberGroup.set(operator.getRawAxis(5));
+		elevator.set(operator.getRawAxis(1));
 
 		updateSmartDashboard();
 	}
@@ -539,7 +507,7 @@ public class Robot extends IterativeRobot {
 		
 		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
 		
-		SmartDashboard.putBoolean("Cube Held", !(cubeSwitch.get()));
+		SmartDashboard.putBoolean("Cube Held", cubeSwitch.get());
 		
 		SmartDashboard.putNumber("Robot Speed", robotSpeed());
 		
