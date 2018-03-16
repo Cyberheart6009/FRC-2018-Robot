@@ -57,6 +57,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	final String right = "right";
 	final String center = "center";
 	
+	double buttonTimer;
+	
 	//what the robot does
 	SendableChooser<String> movementChooser;
 	final String Switch = "Switch";
@@ -68,9 +70,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	final String SwitchLine = "SwitchLine";
 	final String SwitchSwitchLine = "SwitchSwitchLine";
 	final String ScaleLine = "ScaleLine";
+	final String Straight = "Straight";
+	final String joeSwitch = "joeSwitch";
 	String positionSelected;
 	String movementSelected;
-	
 	//auto cases
 	public enum Step { Straight, Turn, Straight2, Turn2, Straight3, Turn3, Straight4, Straight5, Turn4, Straight6, Straight7, Elevator, elevatorTwo, CubeOut, CubeIn, CubeOut2,  Done }
 	public Step autoStep = Step.Straight;
@@ -101,7 +104,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	DifferentialDrive chassis;
 	
 	//LimitSwitch
-	DigitalInput limitSwitchGripper, limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber, cubeSwitch;
+	DigitalInput limitSwitchGripper, limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber;
 	
 	// Joystick Definitions
 	Joystick driver;
@@ -129,6 +132,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	double Kd = 0.0075;
 	
 	
+	
 	/**
 	 * This function is run when the robot is first started up and should be
 	 * used for any initialization code.
@@ -137,9 +141,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void robotInit() {
 		//Chooser for the starting position
 		positionChooser = new SendableChooser<String>();
-		positionChooser.addObject("left", left);
 		positionChooser.addObject("right", right);
 		positionChooser.addObject("center", center);
+		positionChooser.addDefault("left", left);
 		
 		//Chooser for the movement of the robot
 		movementChooser = new SendableChooser<String>();
@@ -152,7 +156,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		movementChooser.addObject("SwitchLine", SwitchLine);
 		movementChooser.addObject("SwitchSwitchLine", SwitchSwitchLine);
 		movementChooser.addObject("ScaleLine", ScaleLine);
-		
+		movementChooser.addDefault("Straight", Straight);
+		movementChooser.addObject("joeSwitch", joeSwitch);
 		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
@@ -192,7 +197,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
-		rightEncoder = new Encoder(2,3);
+		rightEncoder = new Encoder(3,2);
 		elevatorEncoder = new Encoder(8,9);
 		
 		//Gyroscope (NAV-X) Setup
@@ -208,6 +213,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		else{
 			System.out.println("ADB INIT NOT RAN");
 		}
+		SmartDashboard.putData("Robot Position", positionChooser);
+		SmartDashboard.putData("Movement Type", movementChooser);
 	}
 	
 	@Override
@@ -232,7 +239,77 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		updateSmartDashboard();
 		double distance = getDistance();
 		double height = getElevatorheight();
-		if (positionSelected.equalsIgnoreCase(left)) {
+		if (positionSelected == left) {
+			if (movementSelected == Straight){
+				System.out.println("Position: Left; Movement:Straight");
+				if (distance < 200) {
+					driveStraight(0, 0.5);
+				} else {
+					stop();
+					autoStep = Step.Done;
+				}
+			}
+			if (movementSelected == joeSwitch) {
+				System.out.println("Position: Left; Movement:joeSwitch");
+				if (autoStep == Step.Straight){
+					if (distance < 180) {
+						driveStraight(0, 0.5);
+					} else {
+						stop();
+						autoStep = Step.Turn;
+					}
+				}
+				if (gameData.charAt(0) == 'L') {
+					switch (autoStep){
+					case Turn:
+						if (turnLeft(90)) {
+							resetEncoders();
+							autoStep = Step.Straight2;
+						}
+						break;
+					case Straight2:
+						if (distance < 28) {
+							driveStraight(0, 0.5);
+						} else {
+							stop();
+							autoStep = Step.Elevator;
+						}
+						break;
+					case Elevator:
+						if (height < 28) {
+							elevator.set(0.4);
+						} else {
+							elevator.set(0.05);
+							resetEncoders();
+							autoStep = Step.Straight3;
+						}
+						break;
+					case Straight3:
+						if (distance < 7) {
+							driveStraight(90, 0.4);
+							elevator.set(0.05);
+						} else {
+							stop();
+							elevator.set(0.05);
+							autoStep = Step.CubeOut;
+						}
+						break;
+					case CubeOut:
+						if (!limitSwitchGripper.get()) {
+							elevator.set(0.05);
+							resetEncoders();
+							stopGripper();
+							autoStep = Step.Straight4;
+						} else {
+							elevator.set(0.05);
+							gripper.set(1);
+						}
+						break;
+						
+					}
+				}
+				
+			}
 			if (movementSelected.equalsIgnoreCase(Switch)) {
 				if (gameData.length() > 0) {
 					if (gameData.charAt(0) == 'L') {
@@ -567,7 +644,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case CubeOut:
-							if (height < 75) {
+							if (height < 80) {
 								elevator.set(0.4);
 							} else {
 								if (distance < 10) {
@@ -882,6 +959,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				}
 			}
 		} else if (positionSelected.equalsIgnoreCase(right)) {
+			if (movementSelected.equalsIgnoreCase(Straight)){
+				if (distance < 200) {
+					driveStraight(0, 0.4);
+				} else {
+					stop();
+					autoStep = Step.Turn;
+				}
+			}
 			if (movementSelected.equalsIgnoreCase(Switch)) {
 				if (gameData.length() > 0) {
 					if (gameData.charAt(0) == 'L') {
@@ -1218,7 +1303,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case CubeOut:
-							if (height < 75) {
+							if (height < 80) {
 								elevator.set(0.4);
 							} else {
 								if (distance < 10) {
@@ -1528,6 +1613,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
 		yButton = driver.getRawButton(4);
+		lbumper = driver.getRawButton(5);
+		rbumper = driver.getRawButton(6);
+		select = driver.getRawButton(7);
+		start = driver.getRawButton(8);
+		leftThumbPush = driver.getRawButton(9);
+		rightThumbPush = driver.getRawButton(10);
+
 		
 		aButtonOp = operator.getRawButton(1);
 		bButtonOp = operator.getRawButton(2);
@@ -1535,24 +1627,34 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		yButtonOp = operator.getRawButton(4);
 
 		
-		/*		FOR DEBUGGING
+		//	FOR DEBUGGING
 		if (xButton) {
 			//System.out.print(androidData());
 			elevatorEncoder.reset();
 			resetEncoders();
 			gyroscope.reset();
+			resetElevatorEncoder();
 		} 
 		
 		if (aButton){
-			turnToBox();
-		}*/
+			cubeOUT();
+		}
+		if (bButton){
+			elevator.set(0.8);
+		}
+		if (lbumper) {
+		}
 		
 		// OPERATOR CONTROLS
 		if (aButtonOp) {
 			gripperGroup.set(1);
 		} 
+	
 		else if (bButtonOp) {
 			gripperGroup.set(-1);
+		}
+		else if (yButtonOp) {
+			gripperGroup.set(-0.5);
 		}
 		else {
 			gripperGroup.set(0);
@@ -1762,10 +1864,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		
 		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
 		
-		SmartDashboard.putBoolean("Cube Held", cubeSwitch.get());
+		SmartDashboard.putBoolean("Cube Held", limitSwitchGripper.get());
 		
 		SmartDashboard.putNumber("Robot Speed", robotSpeed());
-		
 	}
 	
 	public boolean turnInPlace(double setPoint) {
@@ -1800,6 +1901,21 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		stop();
 		stopElevator();
 		stopGripper();
+	}
+	private void cubeOUT() {
+		double distance = getDistance();
+		double height = getElevatorheight();
+		if (height < 80) {
+			elevator.set(0.7);
+		} else {
+			if (!limitSwitchGripper.get()) {
+				completeStop();
+				resetEncoders();
+			} else {
+				elevator.set(0.05);
+				gripper.set(1);
+			}
+		}
 	}
 	public void resetElevatorEncoder(){
 		elevatorEncoder.reset();
