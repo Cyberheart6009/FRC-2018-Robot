@@ -39,17 +39,11 @@ import org.spectrum3847.RIOdroid.RIOdroid;
 import com.kauailabs.navx.frc.AHRS;
 
 /**
- * The VM is configured to automatically run this class, and to call the
- * functions corresponding to each mode, as described in the IterativeRobot
- * documentation. If you change the name of this class or the package after
- * creating this project, you must also update the build.properties file in the
- * project.
+	THIS BRANCH WAS CREATED TO JOIN CODE FROM BRANCHES JB, KM, RZ.
+	THIS CODE IS FOR THE RYERSON DISTRICT EVENT
  */
 
-/*TODO: 	- Robot Tip prevention (if angle > threshold) -> take over drive train motors and reverse to prevent the tip
- * 			- Function to get phone logs and parse the data in order to retrieve and calculate the location of the box
- * 			
-*/
+
 
 public class Robot extends IterativeRobot {
 	
@@ -62,8 +56,7 @@ public class Robot extends IterativeRobot {
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
-	final static double DEGREES_PER_PIXEL_RIGHT = 0.07;
-	final static double DEGREES_PER_PIXEL_LEFT = 0.100;
+	final static double DEGREES_PER_PIXEL = 0.100;
 	double currentSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
@@ -91,9 +84,6 @@ public class Robot extends IterativeRobot {
 	
 	//Boolean for buttons
 	boolean aButton, bButton, xButton, yButton, aButtonOp, bButtonOp, xButtonOp, yButtonOp;
-	
-	// Analog Sensors
-	AnalogInput ultrasonic_yellow, ultrasonic_black;
 	
 	// Encoders
 	Encoder leftEncoder, rightEncoder, elevatorEncoder;
@@ -135,15 +125,14 @@ public class Robot extends IterativeRobot {
 		gripperTwo = new Spark(9);
 		
 		//Inverting Sparks
-		//elevatorOne.setInverted(true);
 		gripperTwo.setInverted(true);
 		climberOne.setInverted(true);
+		
 		// Defines Joystick ports
 		driver = new Joystick(0);
 		operator = new Joystick(1);
 		
 		//LimitSwitch Port Assignment
-
 		cubeSwitch = new DigitalInput(4);
 
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
@@ -159,32 +148,20 @@ public class Robot extends IterativeRobot {
 		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
-		// Set up port for Ultrasonic Distance Sensor
-		ultrasonic_yellow = new AnalogInput(0);
-		ultrasonic_black = new AnalogInput(1);
-		
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
 		rightEncoder = new Encoder(2,3);
 		elevatorEncoder = new Encoder(8,9);
 		
-		//Gyroscope Setup
-		//gyroscope = new ADXRS450_Gyro();
+		//Gyroscope (NAV-X) Setup
 		gyroscope = new AHRS(SPI.Port.kMXP);
-		//gyroscope.calibrate();
 	
 		// Initialize ADB Communication 
-		
 		if (initializeADB){
-			System.out.println("Initializing adb");
 			RIOdroid.init();
 			RIOadb.init();
-			System.out.println("adb Initialized");
-			
-			System.out.println("Begin ADB Tests");
 			System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
-			//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
-			System.out.println("logcat done");
+			System.out.println("ADB Initialization Complete");
 		}
 		else{
 			System.out.println("ADB INIT NOT RAN");
@@ -240,12 +217,12 @@ public class Robot extends IterativeRobot {
 	/**
 	 * This function is called periodically during operator control.
 	 */
-	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
 		
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
-		//tipPrevention();
+		
+		// Get Joystick Buttons
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
@@ -256,9 +233,8 @@ public class Robot extends IterativeRobot {
 		xButtonOp = operator.getRawButton(3);
 		yButtonOp = operator.getRawButton(4);
 
-		// debug for tipPrevention
-		//System.out.println(gyroscope.getPitch());
 		
+		/*		FOR DEBUGGING
 		if (xButton) {
 			//System.out.print(androidData());
 			elevatorEncoder.reset();
@@ -268,8 +244,9 @@ public class Robot extends IterativeRobot {
 		
 		if (aButton){
 			turnToBox();
-		}
+		}*/
 		
+		// OPERATOR CONTROLS
 		if (aButtonOp) {
 			gripperGroup.set(1);
 		} 
@@ -279,7 +256,6 @@ public class Robot extends IterativeRobot {
 		else {
 			gripperGroup.set(0);
 		}
-		
 		climberGroup.set(operator.getRawAxis(5));
 		elevator.set(operator.getRawAxis(1));
 
@@ -317,18 +293,6 @@ public class Robot extends IterativeRobot {
 	
 	private double getElevatorHeight(){
 		return (double)(elevatorEncoder.get()/ELEVATOR_ENCODER_COUNTS_PER_INCH);
-	}
-	
-	// Calculates and returns the distance from the Yellow Ultrasonic Distance Sensor
-	public double getUltrasonicYellowDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
-	}
-
-	// Calculates and returns the distance from the Black Ultrasonic Distance Sensor
-	public double getUltrasonicBlackDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
 	}
 	
 	// Calculates the robotSpeed
@@ -394,7 +358,7 @@ public class Robot extends IterativeRobot {
 		
 		// FIXME: Already removed the not before turnLeft/ turnRight
 		if (Center_X > 170 && Center_X != 0){
-			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_LEFT;
+			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL;
 			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
 
 			System.out.println("Should be turning left, Offset: " + degreeOffset);
@@ -403,7 +367,7 @@ public class Robot extends IterativeRobot {
 			}
 		}
 		if (Center_X < 170 && Center_X != 0){
-			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_RIGHT;
+			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL;
 			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
 			System.out.println("Should be turning right, Offset: " + degreeOffset);
 			while(gyroscope.getAngle()%360 < boxAngle){
@@ -501,9 +465,6 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Left Encoder Count", leftEncoder.get());
 		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
 		SmartDashboard.putNumber("Encoder Distance", getDistance());
-		
-		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
-		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
 		
 		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
 		
