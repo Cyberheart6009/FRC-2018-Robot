@@ -72,6 +72,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	final String ScaleLine = "ScaleLine";
 	final String Straight = "Straight";
 	final String joeSwitch = "joeSwitch";
+	final String elevatorTest = "elevatorTest";
 	String positionSelected;
 	String movementSelected;
 	//auto cases
@@ -158,6 +159,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		movementChooser.addObject("ScaleLine", ScaleLine);
 		movementChooser.addDefault("Straight", Straight);
 		movementChooser.addObject("joeSwitch", joeSwitch);
+		movementChooser.addObject("elevatorTest", elevatorTest);
 		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
@@ -1889,10 +1891,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rightBack.set(0);
 		rightFront.set(0);
 	}
+	
 	private void stopElevator() {
 		elevatorOne.set(0);
 		elevatorTwo.set(0);
 	}
+	
 	private void stopGripper() {
 		gripperOne.set(0);
 		gripperTwo.set(0);
@@ -1906,7 +1910,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		double distance = getDistance();
 		double height = getElevatorheight();
 		if (height < 80) {
-			elevator.set(0.7);
+			elevator.set(-0.7);
 		} else {
 			if (!limitSwitchGripper.get()) {
 				completeStop();
