@@ -72,8 +72,9 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	
 	//auto cases
 	// Turn2, Turn3, Turn4, Straight2, Straight3, Straight4
+	/**"Name"1, "Name"2, etc... are first created cases, "Name"1m1, "Name"1m2, etc.. prevent the convention from breaking*/ 
 	public enum Step { 
-		Straight1, Straight2, Straight3, Straight4, Straight5, Straight6, Straight7, Straight8,
+		Straight1, Straight2, Straight3, Straight3m1, Straight3m2, Straight4, Straight5, Straight6, Straight7, Straight8,
 		Turn1, Turn2, Turn3, Turn4, Turn5, Turn6,
 		Elevator1, Elevator2, Elevator3,
 		Gripper1, Gripper2,
@@ -1434,22 +1435,22 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						case Turn2:
 							if (turnInPlace(0)) {
 							  	resetEncoders();
-								autoStep = Step.Straight3;
+								autoStep = Step.Elevator1;
 								System.out.println("Turned Left");
 								timerStart = System.currentTimeMillis();
 							}
 							break;
-						case Straight3:
-							if (driveDistanceStraight(0, 55.5, 0.5)){
-								autoStep = Step.Elevator1;
-								System.out.println("Moved Straight");
+						case Elevator1:
+							if (elevatorAscend(50, 0.8)) {
+								autoStep = Step.Straight3;
+								System.out.println("Elevator Ascended");
 								timerStart = System.currentTimeMillis();
 							}
 							break;
-						case Elevator1:
-							if (elevatorAscend(20, 0.8)) {
-								autoStep = Step.Gripper1;
-								System.out.println("Elevator Ascended");
+						case Straight3:
+							if (driveDistanceStraight(0, 63, 0.5)){
+								autoStep = Step.Elevator1;
+								System.out.println("Moved Straight");
 								timerStart = System.currentTimeMillis();
 							}
 							break;
@@ -1460,6 +1461,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 								timerStart = System.currentTimeMillis();
 							} else {
 								gripperGroup.set(1);
+							}
+							break;
+						case Straight3m1:
+							if (driveDistanceStraight(0, -15, -0.5)){
+								autoStep = Step.Elevator1;
+								System.out.println("Moved Straight");
+								timerStart = System.currentTimeMillis();
 							}
 							break;
 						case Elevator2:
@@ -1501,10 +1509,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							if (movementSelected == "switchSwitch") {
 								switch (autoStep) {
 								case Straight5:
-									if (driveDistanceStraight(90, -55.5, -0.3)) {
+									if (driveDistanceStraight(90, -55.5, -0.5)) {
 										resetEncoders();
 										autoStep = Step.Turn4;
-										System.out.println("Moved 10 inches backwards");
+										System.out.println("Moved 55.5 inches backwards");
 										timerStart = System.currentTimeMillis();
 									}
 									break;
@@ -1517,9 +1525,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 									}
 									break;
 								case Elevator3:
-									if (elevatorAscend(20, 0.8)) {
+									if (elevatorAscend(50, 0.8)) {
 										autoStep = Step.Gripper2;
 										System.out.println("Elevator Ascended");
+										timerStart = System.currentTimeMillis();
+									}
+									break;
+								case Straight3m2:
+									if (driveDistanceStraight(10,15,0.5)) {
+										resetEncoders();
+										autoStep = Step.Turn4;
+										System.out.println("Moved 55.5 inches backwards");
 										timerStart = System.currentTimeMillis();
 									}
 									break;
@@ -1698,22 +1714,22 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						case Turn2:
 							if (turnInPlace(0)) {
 							  	resetEncoders();
-								autoStep = Step.Straight3;
+								autoStep = Step.Elevator1;
 								System.out.println("Turned Left");
 								timerStart = System.currentTimeMillis();
 							}
 							break;
-						case Straight3:
-							if (driveDistanceStraight(0, 55.5, 0.5)){
-								autoStep = Step.Elevator1;
-								System.out.println("Moved Straight");
+						case Elevator1:
+							if (elevatorAscend(50, 0.8)) {
+								autoStep = Step.Straight3;
+								System.out.println("Elevator Ascended");
 								timerStart = System.currentTimeMillis();
 							}
 							break;
-						case Elevator1:
-							if (elevatorAscend(20, 0.8)) {
+						case Straight3:
+							if (driveDistanceStraight(0, 63, 0.5)){
 								autoStep = Step.Gripper1;
-								System.out.println("Elevator Ascended");
+								System.out.println("Moved Straight");
 								timerStart = System.currentTimeMillis();
 							}
 							break;
