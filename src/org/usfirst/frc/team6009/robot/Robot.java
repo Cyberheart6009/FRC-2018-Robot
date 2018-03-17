@@ -33,42 +33,41 @@ import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
+
 import org.spectrum3847.RIOdroid.RIOadb;
 import org.spectrum3847.RIOdroid.RIOdroid;
+import org.usfirst.frc.team6009.robot.Robot.Step;
 
 import com.kauailabs.navx.frc.AHRS;
 
 /**
- * The VM is configured to automatically run this class, and to call the
- * functions corresponding to each mode, as described in the IterativeRobot
- * documentation. If you change the name of this class or the package after
- * creating this project, you must also update the build.properties file in the
- * project.
+	THIS BRANCH WAS CREATED TO JOIN CODE FROM BRANCHES JB, KM, RZ.
+	THIS CODE IS FOR THE RYERSON DISTRICT EVENT
  */
 
-/*TODO: 	- Robot Tip prevention (if angle > threshold) -> take over drive train motors and reverse to prevent the tip
- * 			- Function to get phone logs and parse the data in order to retrieve and calculate the location of the box
- * 			
-*/
+
 
 public class Robot extends IterativeRobot {
 	
 	// Auto Modes Setup
-	private static final String kDefaultAuto = "Default";
-	private static final String kCustomAuto = "My Auto";
-	private static final String SquareAuto = "Square";
-	private String m_autoSelected;
+	private static final String centerSwitch = "Center Switch";
+	private static final String DriveStraight = "Straight Drive";
+	private static final String RightSwitch = "Right Switch";
+	private static final String LeftSwitch = "Left Switch";
+	private String autoSelected;
 	
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
-	final static double DEGREES_PER_PIXEL_RIGHT = 0.07;
-	final static double DEGREES_PER_PIXEL_LEFT = 0.100;
+	final static double DEGREES_PER_PIXEL = 0.100;
 	double currentSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
 	String box_position = "NO DATA";
 	boolean initializeADB = false;
+	String gameData;
+	long timerStart;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -92,9 +91,6 @@ public class Robot extends IterativeRobot {
 	//Boolean for buttons
 	boolean aButton, bButton, xButton, yButton, aButtonOp, bButtonOp, xButtonOp, yButtonOp;
 	
-	// Analog Sensors
-	AnalogInput ultrasonic_yellow, ultrasonic_black;
-	
 	// Encoders
 	Encoder leftEncoder, rightEncoder, elevatorEncoder;
 	
@@ -105,7 +101,7 @@ public class Robot extends IterativeRobot {
 	double kP = 0.03;
 	
 	//Auto variables
-	public enum Step {STRAIGHT, TURN};
+	public enum Step {STRAIGHT, SHORT_STRAIGHT, STRAIGHT1CENTER, TURN1CENTER, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, TURN, LAUNCH, DONE};
 	public Step autoStep = Step.STRAIGHT;
 	
 	
@@ -116,9 +112,10 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void robotInit() {
 		// Adds all of our previously created auto modes into the smartdashboard chooser
-		m_chooser.addDefault("Default Auto", kDefaultAuto);
-		m_chooser.addObject("My Auto", kCustomAuto);
-		m_chooser.addObject("Square Mode", SquareAuto);
+		m_chooser.addObject("Center Switch", centerSwitch);
+		m_chooser.addObject("My Auto", DriveStraight);
+		m_chooser.addDefault("Right Switch", RightSwitch);
+		m_chooser.addDefault("Left Switch", LeftSwitch);		
 		SmartDashboard.putData("Auto choices", m_chooser);
 		
 		
@@ -135,19 +132,15 @@ public class Robot extends IterativeRobot {
 		gripperTwo = new Spark(9);
 		
 		//Inverting Sparks
-		//elevatorOne.setInverted(true);
 		gripperTwo.setInverted(true);
+		climberOne.setInverted(true);
 		
 		// Defines Joystick ports
 		driver = new Joystick(0);
 		operator = new Joystick(1);
 		
 		//LimitSwitch Port Assignment
-		limitSwitchUpElevator = new DigitalInput(4);
-		limitSwitchDownElevator =  new DigitalInput(5);
-		limitSwitchUpClimber = new DigitalInput(6);
-		limitSwitchDownClimber = new DigitalInput(7);
-		cubeSwitch = new DigitalInput(8);
+		cubeSwitch = new DigitalInput(4);
 
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
@@ -162,32 +155,20 @@ public class Robot extends IterativeRobot {
 		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
 		
-		// Set up port for Ultrasonic Distance Sensor
-		ultrasonic_yellow = new AnalogInput(0);
-		ultrasonic_black = new AnalogInput(1);
-		
 		// Set up Encoder ports
 		leftEncoder = new Encoder(0,1);
-		rightEncoder = new Encoder(2,3);
+		rightEncoder = new Encoder(3,2);
 		elevatorEncoder = new Encoder(8,9);
 		
-		//Gyroscope Setup
-		//gyroscope = new ADXRS450_Gyro();
+		//Gyroscope (NAV-X) Setup
 		gyroscope = new AHRS(SPI.Port.kMXP);
-		//gyroscope.calibrate();
 	
 		// Initialize ADB Communication 
-		
 		if (initializeADB){
-			System.out.println("Initializing adb");
 			RIOdroid.init();
 			RIOadb.init();
-			System.out.println("adb Initialized");
-			
-			System.out.println("Begin ADB Tests");
 			System.out.println("Start ADB" + RIOdroid.executeCommand("adb start-server"));
-			//System.out.println("LOGCAT: " + RIOdroid.executeCommand("adb logcat -t 200 ActivityManager:I native:D *:S"));
-			System.out.println("logcat done");
+			System.out.println("ADB Initialization Complete");
 		}
 		else{
 			System.out.println("ADB INIT NOT RAN");
@@ -196,9 +177,13 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void autonomousInit() {
-		m_autoSelected = m_chooser.getSelected();
-		System.out.println("Auto selected: " + m_autoSelected);
-		autoStep = Step.STRAIGHT;
+		autoSelected = (String) m_chooser.getSelected();
+		System.out.println("Auto selected: " + autoSelected);
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		if ((autoSelected.equalsIgnoreCase(RightSwitch)) || autoSelected.equalsIgnoreCase(LeftSwitch)) {
+			autoStep = Step.STRAIGHT;
+		}
+		
 		resetEncoders();
 		gyroscope.reset();
 	}
@@ -209,46 +194,94 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 		updateSmartDashboard();
-		if (m_autoSelected == SquareAuto) {
-			System.out.println("Square Auto Is Operating");
-			switch(autoStep){
-				case STRAIGHT:
-					if (getDistance() < 24){
-						driveStraight(0, 0.3);
-						System.out.println("Going Straight");
-					}
-					else{
-						stop();
-						resetEncoders();
-						autoStep = Step.TURN;
-						System.out.println("Encoders Reset!");
-					}
-					
-					break;
-				case TURN:
-					if(turnRight(90)){
-						stop();
-						resetEncoders();
-						gyroscope.reset();
-						autoStep = Step.STRAIGHT;
-						System.out.println("Turned Right");
-					}
-					break;
+		if (autoSelected == DriveStraight) {
+			if (getDistance() < 160){
+				driveStraight(0, 0.5);
+				System.out.println("Going Straight");
+			}
+			else{
+				stop();
+				System.out.println("Stopped");
 			}
 		}
 		
-		return;
+		if (autoSelected.equalsIgnoreCase(RightSwitch) || autoSelected.equalsIgnoreCase(LeftSwitch)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case STRAIGHT:
+				if (getDistance() < 160){
+					driveStraight(0, 0.5);
+				}
+				else{
+					stop();
+					autoStep = Step.TURN;
+				}
+				break;
+			case TURN:
+				if (gameData.charAt(0) == 'R' && autoSelected == RightSwitch){
+					if (turnLeft(-90)) {
+						resetEncoders();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else if(gameData.charAt(0) == 'L' && autoSelected == LeftSwitch){
+					if (turnRight(90)) {
+						resetEncoders();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else{
+					stop();
+					autoStep = Step.DONE;
+				}
+				break;
+			case SHORT_STRAIGHT:
+				if (autoSelected == LeftSwitch){
+					if (getDistance() < 40){
+						driveStraight(90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}
+				else{
+					if (getDistance() < 40){
+						driveStraight(-90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}				
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 500) {
+					gripperGroup.set(0.8);
+				}
+				else{
+					gripperGroup.set(0);
+					autoStep = Step.DONE;
+				}
+				break;
+			case DONE:
+				break;
+			}
+			return;
+		}
 	}
 
 	/**
 	 * This function is called periodically during operator control.
 	 */
-	// TODO Jump to periodic
 	@Override
 	public void teleopPeriodic() {
 		
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
-		//tipPrevention();
+		
+		// Get Joystick Buttons
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
 		xButton = driver.getRawButton(3);
@@ -259,9 +292,8 @@ public class Robot extends IterativeRobot {
 		xButtonOp = operator.getRawButton(3);
 		yButtonOp = operator.getRawButton(4);
 
-		// debug for tipPrevention
-		//System.out.println(gyroscope.getPitch());
 		
+		/*		FOR DEBUGGING
 		if (xButton) {
 			//System.out.print(androidData());
 			elevatorEncoder.reset();
@@ -271,49 +303,23 @@ public class Robot extends IterativeRobot {
 		
 		if (aButton){
 			turnToBox();
-		}
+		}*/
 		
+		// OPERATOR CONTROLS
 		if (aButtonOp) {
 			gripperGroup.set(1);
-		} 
+		}
+		else if (yButtonOp) {
+			gripperGroup.set(0.5);
+		}
 		else if (bButtonOp) {
 			gripperGroup.set(-1);
 		}
 		else {
 			gripperGroup.set(0);
 		}
-		
-		
-		if (limitSwitchUpElevator.get() & limitSwitchDownElevator.get()) {
-			elevator.set(operator.getRawAxis(1));
-		}
-		if (!limitSwitchUpElevator.get() & (operator.getRawAxis(1) > 0)) { 
- 			elevator.set(0);
- 			System.out.println("UP ELEVATOR limit Switct being pressed while DOWN Joystick is pressed");
- 		}
-		if (!limitSwitchDownElevator.get() & (operator.getRawAxis(1) < 0)) { 
- 			elevator.set(0);
- 			System.out.println("DOWN ELEVATOR limit Switct being pressed while UP Joystick is pressed");
- 		}
-		//else {
-			//elevatorGroup.set(0);
-		//}
- 			/*
-		if (limitSwitchUpClimber.get() & limitSwitchDownClimber.get()) {
-			climberGroup.set(operator.getRawAxis(5));
-		}
-		
-		if (!limitSwitchUpClimber.get() & (operator.getRawAxis(5) > 0)) { 
- 			climberGroup.set(0);
- 			System.out.println("UP CLIMBER limit Switct being pressed while DOWN Joystick is pressed");	
- 		}
-		if (!limitSwitchDownClimber.get() & (operator.getRawAxis(5) < 0)) {
-			climberGroup.set(0);
- 			System.out.println("DOWN CLIMBER limit Switct being pressed while UP Joystick is pressed");	
- 		}
-		//else {
-			//climberGroup.set(0); 
-		//}*/
+		climberGroup.set(operator.getRawAxis(5));
+		elevator.set(operator.getRawAxis(1));
 
 		updateSmartDashboard();
 	}
@@ -327,10 +333,9 @@ public class Robot extends IterativeRobot {
 	
 	public void disabledPeriodic(){
 		updateSmartDashboard();
+		autoSelected = (String) m_chooser.getSelected();
+		SmartDashboard.putString("Selected Auto", autoSelected);
 	}
-	
-	
-	
 	
 	//--------------------------//
 	//		Custom Functions	//
@@ -349,18 +354,6 @@ public class Robot extends IterativeRobot {
 	
 	private double getElevatorHeight(){
 		return (double)(elevatorEncoder.get()/ELEVATOR_ENCODER_COUNTS_PER_INCH);
-	}
-	
-	// Calculates and returns the distance from the Yellow Ultrasonic Distance Sensor
-	public double getUltrasonicYellowDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_yellow.getAverageVoltage()*1000)/238.095)+9.0); //accuracy of 2 millimeters ;)
-	}
-
-	// Calculates and returns the distance from the Black Ultrasonic Distance Sensor
-	public double getUltrasonicBlackDistance(){
-		// Calculates distance in centimeters from ultrasonic distance sensor
-		return (double)(((ultrasonic_black.getAverageVoltage()*1000)/9.4));
 	}
 	
 	// Calculates the robotSpeed
@@ -426,7 +419,7 @@ public class Robot extends IterativeRobot {
 		
 		// FIXME: Already removed the not before turnLeft/ turnRight
 		if (Center_X > 170 && Center_X != 0){
-			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_LEFT;
+			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL;
 			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
 
 			System.out.println("Should be turning left, Offset: " + degreeOffset);
@@ -435,7 +428,7 @@ public class Robot extends IterativeRobot {
 			}
 		}
 		if (Center_X < 170 && Center_X != 0){
-			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL_RIGHT;
+			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL;
 			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
 			System.out.println("Should be turning right, Offset: " + degreeOffset);
 			while(gyroscope.getAngle()%360 < boxAngle){
@@ -497,10 +490,10 @@ public class Robot extends IterativeRobot {
 	
 	private boolean turnRight(double targetAngle){
 		// We want to turn in place to 60 degrees 
-		leftBack.set(0.35);
-		leftFront.set(0.35);
-		rightBack.set(0.35);
-		rightFront.set(0.35);
+		leftBack.set(0.3);
+		leftFront.set(0.3);
+		rightBack.set(0.3);
+		rightFront.set(0.3);
 
 		System.out.println("Turning Right");
 		
@@ -513,10 +506,10 @@ public class Robot extends IterativeRobot {
 	}
 	private boolean turnLeft(double targetAngle){
 		// We want to turn in place to 60 degrees 
-		leftBack.set(-0.35);
-		leftFront.set(-0.35);
-		rightBack.set(-0.35);
-		rightFront.set(-0.35);
+		leftBack.set(-0.3);
+		leftFront.set(-0.3);
+		rightBack.set(-0.3);
+		rightFront.set(-0.3);
 
 		double currentAngle = gyroscope.getAngle();
 		if (currentAngle <= targetAngle + 2){
@@ -534,12 +527,9 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("Right Encoder Count", rightEncoder.get());
 		SmartDashboard.putNumber("Encoder Distance", getDistance());
 		
-		SmartDashboard.putNumber("Ultrasonic Yellow Distance (cm):", getUltrasonicYellowDistance());
-		SmartDashboard.putNumber("Ultrasonic Black Distance (cm):", getUltrasonicBlackDistance());
-		
 		SmartDashboard.putNumber("Elevator Height", getElevatorHeight());
 		
-		SmartDashboard.putBoolean("Cube Held", !(cubeSwitch.get()));
+		SmartDashboard.putBoolean("Cube Held", cubeSwitch.get());
 		
 		SmartDashboard.putNumber("Robot Speed", robotSpeed());
 		
