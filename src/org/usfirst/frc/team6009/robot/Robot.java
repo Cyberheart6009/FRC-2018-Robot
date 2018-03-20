@@ -53,6 +53,13 @@ import com.kauailabs.navx.frc.AHRS;
  */
 
 public class Robot extends IterativeRobot implements PIDOutput {
+	private SendableChooser<String> m_chooser = new SendableChooser<>();
+	final String leftSwitch = "leftSwitch";
+	final String rightSwitch = "rightSwitch";
+	final String leftScale = "leftScale";
+	final String rightScale = "rightScale";
+	private String autoSelected;
+
 	
 	// Constant defining encoder turns per inch of robot travel
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
@@ -85,7 +92,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	String movementSelected;
 	
 	//auto cases
-		public enum Step { Straight, Turn, Straight2, Turn2, Straight3, Turn3, Straight4, Straight5, Turn4, Straight6, Straight7, Elevator, Elevator2, CubeOut, CubeIn, CubeOut2,  Done }
+		public enum Step { Straight, Turn, Straight2, Turn2, SHORT_STRAIGHT, LAUNCH, Straight3, Turn3, Straight4, Straight5, Turn4, Straight6, Straight7, Elevator, Elevator2, CubeOut, CubeIn, CubeOut2,  Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
 
@@ -95,7 +102,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
     SpeedController leftFront, leftBack, rightFront, rightBack, gripper1, gripper2, elevator1, elevator2, climber1, climber2, PIDSpeed;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis, elevator, gripper;
+	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, gripperGroup;
 	
 	Encoder leftEncoder, rightEncoder, elevatorEncoder;
 	
@@ -125,6 +132,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void robotInit() {
+		m_chooser = new SendableChooser<String>();
+		m_chooser.addObject("leftSwitch", leftSwitch);
+		m_chooser.addObject("rightSwitch", rightSwitch);
+		m_chooser.addObject("leftScale", leftScale);
+		m_chooser.addObject("rightScale", rightScale);
+		
 		//Chooser for the starting position
 		positionChooser = new SendableChooser<String>();
 		positionChooser.addObject("left", left);
@@ -158,8 +171,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		gripper1 = new Spark(8);
 		gripper2 = new Spark(9);
 		
-		elevator = new SpeedControllerGroup(elevator1, elevator2);
-		gripper = new SpeedControllerGroup(gripper1, gripper2);
+		elevatorGroup = new SpeedControllerGroup(elevator1, elevator2);
+		gripperGroup = new SpeedControllerGroup(gripper1, gripper2);
 		
 		//leftElevator = new Encoder(4, 5);
 		//rightElevator = new Encoder(6, 7);
@@ -212,11 +225,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void autonomousInit() {
 		//Assign selected modes to a variable
-		positionSelected = positionChooser.getSelected();
-		movementSelected = movementChooser.getSelected();
-		System.out.println("Position Selected: " + positionSelected);
-		System.out.println("Movement Selected" + movementSelected);
-		//Get Orientation of scale and store it in gameData
+		autoSelected = (String) m_chooser.getSelected();
+		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		//Reset the gyro so the heading at the start of the match is 0
 		resetEncoders();
@@ -231,327 +241,75 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void autonomousPeriodic() {
 		double distance = getDistance();
 		double height = getElevatorheight();
-		if (positionSelected.equalsIgnoreCase(left)) {
-			if (movementSelected.equalsIgnoreCase(Switch)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("leftSwitch1/2");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight4;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(90, -0.4);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					} else {
-						System.out.println("leftSwitch3/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 220) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 240) {
-								driveStraight(90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn2;
-							}
-							break;
-						case Turn2:
-							if (turnInPlace(180)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 40) {
-								driveStraight(180, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn3;
-							}
-							break;
-						case Turn3:
-							if (turnInPlace(270)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight4;
-							}
-							break;
-						case Straight4:
-							if (distance < 10) {
-								driveStraight(270, 0.4);
-								elevator.set(0.05);
-							} else {
-								elevator.set(0.05);
-								stop();
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight5;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight5:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(270, -0.4);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
+		if (autoSelected.equalsIgnoreCase(rightSwitch) || autoSelected.equalsIgnoreCase(leftSwitch)) {
+			switch (autoStep) {
+			case Straight:
+				if (getDistance() < 160){
+					driveStraight(0, 0.5);
+				}
+				else{
+					stop();
+					autoStep = Step.Turn;
+				}
+				break;
+			case Turn:
+				if (gameData.charAt(0) == 'R' && autoSelected == rightSwitch){
+					if (turnLeft(-90)) {
+						resetEncoders();
+						autoStep = Step.SHORT_STRAIGHT;
 					}
 				}
-			} else if (movementSelected.equalsIgnoreCase(SwitchSwitch)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("leftSwitchSwitch1/2");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight4;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}	
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(90, -0.4);
-							} else {
-								completeStop();
-								resetElevatorEncoder();
-								autoStep = Step.Done;
-							}
-							break;
-						case Turn2:
-							if (turnInPlace(-0)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight5;
-							}
-							break;
-						case Straight5:
-							if (distance < 40) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn3;
-							}
-							break;
-						case Turn3:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight6;
-							}
-							break;
-						case Straight6:
-							if (distance < 15) {
-								driveStraight(90, 0.4) ;
-							} else {
-								stop();
-								autoStep = Step.Turn4;
-							}
-							break;
-						case Turn4:
-							if (turnInPlace(180)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.CubeIn;
-							}
-							break;
-						case CubeIn:
-							if (distance < 20) {
-								driveStraight(180, 0.4);
-								gripper.set(-1);
-							} else {
-								completeStop();
-								autoStep = Step.Elevator2;
-							}
-							break;
-						case Elevator2:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.CubeOut2;
-							}
-							break;
-						case CubeOut2:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight7;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight7:
-							if (distance < 15) {
-								driveStraight(180, -0.4);
-								elevator.set(0.05);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-						case Done:
-							completeStop();
-							break;
-						}
-					} else {
-						System.out.println("leftSwitchSwitch3/4");
+				else if(gameData.charAt(0) == 'L' && autoSelected == leftSwitch){
+					if (turnRight(90)) {
+						resetEncoders();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
 				}
-			} else if (movementSelected.equalsIgnoreCase(Scale)) {
+				else{
+					stop();
+					autoStep = Step.Done;
+				}
+				break;
+			case SHORT_STRAIGHT:
+				if (autoSelected == leftSwitch){
+					if (getDistance() < 40){
+						driveStraight(90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}
+				else{
+					if (getDistance() < 40){
+						driveStraight(-90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}				
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 500) {
+					gripperGroup.set(0.8);
+				}
+				else{
+					gripperGroup.set(0);
+					autoStep = Step.Done;
+				}
+				break;
+			case Done:
+				break;
+			}
+			if (autoSelected.equalsIgnoreCase(leftScale) || autoSelected.equalsIgnoreCase(rightScale)) {
 				if (gameData.length() > 0) {
 					if (gameData.charAt(1) == 'L') {
-						System.out.println("leftScale1/3");
 						switch (autoStep) {
 						case Straight:
-							if (distance < 315) {
+							if (distance < 280) {
 								driveStraight(0, 0.4);
 							} else {
 								stop();
@@ -559,27 +317,36 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							}
 							break;
 						case Turn:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.CubeOut;
+							if (autoSelected == leftScale) {
+								if (turnInPlace(90)) {
+									resetEncoders();
+									rotationPID.setEnabled(false);
+									autoStep = Step.Done;
+								}
+							}
+							else {
+								if (turnInPlace(-90)) {
+									resetEncoders();
+									rotationPID.setEnabled(false);
+									autoStep = Step.Done;
+								}
 							}
 							break;
 						case CubeOut:
 							if (height < 75) {
-								elevator.set(0.4);
+								elevatorGroup.set(0.4);
 							} else {
 								if (distance < 10) {
 									driveStraight(90, 0.4);
-									elevator.set(0.05);
+									elevatorGroup.set(0.05);
 								} else {
 									if (!limitSwitchGripper.get()) {
 										completeStop();
 										resetEncoders();
 										autoStep = Step.Straight2;
 									} else {
-										elevator.set(0.05);
-										gripper.set(1);
+										elevatorGroup.set(0.05);
+										gripperGroup.set(1);
 									}
 								}
 							}
@@ -588,931 +355,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							completeStop();
 							break;
 						}
-					} else {
-						System.out.println("leftScale2/4");
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(ScaleSwitch)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(1) == 'L') {
-						if (gameData.charAt(0) == 'L') {
-							System.out.println("leftScaleSwitch1");
-						} else {
-							System.out.println("leftScaleSwitch3");
-						}
-					} else {
-						if (gameData.charAt(0) == 'L') {
-							System.out.println("leftScaleSwitch2");
-						} else {
-							System.out.println("leftScaleSwitch4");
-						}
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(SwitchScale)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						if (gameData.charAt(1) == 'L') {
-							System.out.println("leftSwitchScale1");
-						} else {
-							System.out.println("leftSwitchScale2");
-						}
-					} else {
-						if (gameData.charAt(1) == 'L') {
-							System.out.println("leftSwitchScale3");
-						} else {
-							System.out.println("leftSwitchScale4");
-						}
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(SwitchLine)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("leftSwitchLine1/2");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (height < 40) {
-								elevator.set(0.3);
-							} else {
-								if (!limitSwitchGripper.get()) {
-									elevator.set(0.05);
-									resetEncoders();
-									stopGripper();
-									autoStep = Step.Straight4;
-								} else {
-									elevator.set(0.05);
-									gripper.set(1);
-								}
-							}
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(90, -0.4);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					} else {
-						System.out.println("leftSwitchLine3/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(SwitchSwitchLine)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("leftSwitchSwitchLine1/2");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight4;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}	
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(90, -0.4);
-							} else {
-								completeStop();
-								resetElevatorEncoder();
-								autoStep = Step.Done;
-							}
-							break;
-						case Turn2:
-							if (turnInPlace(-0)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight5;
-							}
-							break;
-						case Straight5:
-							if (distance < 40) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn3;
-							}
-							break;
-						case Turn3:
-							if (turnInPlace(90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight6;
-							}
-							break;
-						case Straight6:
-							if (distance < 15) {
-								driveStraight(90, 0.4) ;
-							} else {
-								stop();
-								autoStep = Step.Turn4;
-							}
-							break;
-						case Turn4:
-							if (turnInPlace(180)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.CubeIn;
-							}
-							break;
-						case CubeIn:
-							if (distance < 20) {
-								driveStraight(180, 0.4);
-								gripper.set(-1);
-							} else {
-								completeStop();
-								autoStep = Step.Elevator2;
-							}
-							break;
-						case Elevator2:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.CubeOut2;
-							}
-							break;
-						case CubeOut2:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight7;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight7:
-							if (distance < 15) {
-								driveStraight(180, -0.4);
-								elevator.set(0.05);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-						case Done:
-							completeStop();
-							break;
-						}
-					} else {
-						System.out.println("leftSwitchSwitchLine3/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					}
+			}
+			return;
 				}
 			}
-		} else if (positionSelected.equalsIgnoreCase(right)) {
-			if (movementSelected.equalsIgnoreCase(Switch)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("rightSwitch1/2");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 220) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 240) {
-								driveStraight(-90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn2;
-							}
-							break;
-						case Turn2:
-							if (turnInPlace(-180)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 40) {
-								driveStraight(-180, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn3;
-							}
-							break;
-						case Turn3:
-							if (turnInPlace(-270)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight4;
-							}
-							break;
-						case Straight4:
-							if (distance < 10) {
-								driveStraight(-270, 0.4);
-								elevator.set(0.05);
-							} else {
-								elevator.set(0.05);
-								stop();
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight5;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight5:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(-270, -0.4);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					} else {
-						System.out.println("rightSwitch3/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(-90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(-90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight4;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(-90, -0.4);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(SwitchSwitch)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("rightSwitchSwitch1/2");
-					} else {
-						System.out.println("rightSwitchSwitch3/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(-90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(-90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight4;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}	
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(-90, -0.4);
-							} else {
-								completeStop();
-								resetElevatorEncoder();
-								autoStep = Step.Done;
-							}
-							break;
-						case Turn2:
-							if (turnInPlace(0)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight5;
-							}
-							break;
-						case Straight5:
-							if (distance < 40) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn3;
-							}
-							break;
-						case Turn3:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight6;
-							}
-							break;
-						case Straight6:
-							if (distance < 15) {
-								driveStraight(-90, 0.4) ;
-							} else {
-								stop();
-								autoStep = Step.Turn4;
-							}
-							break;
-						case Turn4:
-							if (turnInPlace(-180)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.CubeIn;
-							}
-							break;
-						case CubeIn:
-							if (distance < 20) {
-								driveStraight(-180, 0.4);
-								gripper.set(-1);
-							} else {
-								completeStop();
-								autoStep = Step.Elevator2;
-							}
-							break;
-						case Elevator2:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.CubeOut2;
-							}
-							break;
-						case CubeOut2:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight7;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight7:
-							if (distance < 15) {
-								driveStraight(-180, -0.4);
-								elevator.set(0.05);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-						case Done:
-							completeStop();
-							break;
-						}
-					}
-			} else if (movementSelected.equalsIgnoreCase(Scale)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(1) == 'l') {
-						System.out.println("rightScale1/3");
-					} else {
-						System.out.println("rightScale2/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 315) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (height < 75) {
-								elevator.set(0.4);
-							} else {
-								if (distance < 10) {
-									driveStraight(-90, 0.4);
-									elevator.set(0.05);
-								} else {
-									if (!limitSwitchGripper.get()) {
-										completeStop();
-										resetEncoders();
-										autoStep = Step.Straight2;
-									} else {
-										elevator.set(0.05);
-										gripper.set(1);
-									}
-								}
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(ScaleSwitch)) {
-				
-			} else if (movementSelected.equalsIgnoreCase(SwitchScale)) {
-				
-			} else if (movementSelected.equalsIgnoreCase(SwitchLine)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("rightSwitchLine1/2");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					} else {
-						System.out.println("rightSwitchLine3/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(-90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(-90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (height < 40) {
-								elevator.set(0.3);
-							} else {
-								if (!limitSwitchGripper.get()) {
-									elevator.set(0.05);
-									resetEncoders();
-									stopGripper();
-									autoStep = Step.Straight4;
-								} else {
-									elevator.set(0.05);
-									gripper.set(1);
-								}
-							}
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(-90, -0.4);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(SwitchSwitchLine)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(0) == 'L') {
-						System.out.println("rightSwitchSwitchLine1/2");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Done;
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-					} else {
-						System.out.println("rightSwitchSwitchLine3/4");
-						switch (autoStep) {
-						case Straight:
-							if (distance < 180) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight2;
-							}
-							break;
-						case Straight2:
-							if (distance < 28) {
-								driveStraight(-90, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Elevator;
-							}
-							break;
-						case Elevator:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.Straight3;
-							}
-							break;
-						case Straight3:
-							if (distance < 7) {
-								driveStraight(-90, 0.4);
-								elevator.set(0.05);
-							} else {
-								stop();
-								elevator.set(0.05);
-								autoStep = Step.CubeOut;
-							}
-							break;
-						case CubeOut:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight4;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}	
-							break;
-						case Straight4:
-							if (distance < 15) {
-								elevator.set(0.05);
-								driveStraight(-90, -0.4);
-							} else {
-								completeStop();
-								resetElevatorEncoder();
-								autoStep = Step.Done;
-							}
-							break;
-						case Turn2:
-							if (turnInPlace(0)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight5;
-							}
-							break;
-						case Straight5:
-							if (distance < 40) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn3;
-							}
-							break;
-						case Turn3:
-							if (turnInPlace(-90)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.Straight6;
-							}
-							break;
-						case Straight6:
-							if (distance < 15) {
-								driveStraight(-90, 0.4) ;
-							} else {
-								stop();
-								autoStep = Step.Turn4;
-							}
-							break;
-						case Turn4:
-							if (turnInPlace(-180)) {
-								resetEncoders();
-								rotationPID.setEnabled(false);
-								autoStep = Step.CubeIn;
-							}
-							break;
-						case CubeIn:
-							if (distance < 20) {
-								driveStraight(-180, 0.4);
-								gripper.set(-1);
-							} else {
-								completeStop();
-								autoStep = Step.Elevator2;
-							}
-							break;
-						case Elevator2:
-							if (height < 40) {
-								elevator.set(0.4);
-							} else {
-								elevator.set(0.05);
-								resetEncoders();
-								autoStep = Step.CubeOut2;
-							}
-							break;
-						case CubeOut2:
-							if (!limitSwitchGripper.get()) {
-								elevator.set(0.05);
-								resetEncoders();
-								stopGripper();
-								autoStep = Step.Straight7;
-							} else {
-								elevator.set(0.05);
-								gripper.set(1);
-							}
-							break;
-						case Straight7:
-							if (distance < 15) {
-								driveStraight(-180, -0.4);
-								elevator.set(0.05);
-							} else {
-								completeStop();
-								autoStep = Step.Done;
-							}
-						case Done:
-							completeStop();
-							break;
-						}
-					}
-				}
-			} else if (movementSelected.equalsIgnoreCase(ScaleLine)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(1) == 'L') {
-						System.out.println("rightScaleLine);
-					}
-				}
+		}
 			}
-		} else if (positionSelected.equalsIgnoreCase(center)){
-			
-		} 
-		}
-		}
-	}
 
 	/**
 	 * This function is called periodically during operator control.
@@ -1605,6 +453,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void disabledPeriodic(){
 		//System.out.println(rotationPID);
 		updateSmartDashboard();
+		autoSelected = (String) m_chooser.getSelected();
+		SmartDashboard.putString("Selected Auto", autoSelected);
 	}
 	public void resetEncoders(){
 		leftEncoder.reset();
@@ -1626,6 +476,35 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		rotationPID.setEnabled(true);
 		leftChassis.set(rotationPID.get());
 		rightChassis.set(-rotationPID.get());
+	}
+	private boolean turnRight(double targetAngle){
+		// We want to turn in place to 60 degrees 
+		leftBack.set(0.3);
+		leftFront.set(0.3);
+		rightBack.set(0.3);
+		rightFront.set(0.3);
+
+		System.out.println("Turning Right");
+		
+		double currentAngle = gyroscope.getAngle();
+		if (currentAngle >= targetAngle - 2){
+			System.out.println("Stopped Turning Right");
+			return true;
+		}
+		return false;
+	}
+	private boolean turnLeft(double targetAngle){
+		// We want to turn in place to 60 degrees 
+		leftBack.set(-0.3);
+		leftFront.set(-0.3);
+		rightBack.set(-0.3);
+		rightFront.set(-0.3);
+
+		double currentAngle = gyroscope.getAngle();
+		if (currentAngle <= targetAngle + 2){
+			return true;
+		}
+		return false;
 	}
 	
 	public boolean turnInPlace(double setPoint) {
