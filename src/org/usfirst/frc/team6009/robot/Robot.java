@@ -70,27 +70,6 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	// Auto Modes Setup
 	String gameData;
 	
-	//Starting positions
-	SendableChooser<String> positionChooser;
-	final String left = "left";
-	final String right = "right";
-	final String center = "center";
-	
-	//what the robot does
-	SendableChooser<String> movementChooser;
-	final String Switch = "Switch";
-	final String SwitchSwitch = "SwitchSwitch";
-	final String Scale = "Scale";
-	final String ScaleSwitch = "ScaleSwitch";
-	final String SwitchScale = "SwitchScale";
-	final String Portal = "Portal";
-	final String SwitchLine = "SwitchLine";
-	final String SwitchSwitchLine = "SwitchSwitchLine";
-	final String ScaleLine = "ScaleLine";
-	
-    String positionSelected;
-	String movementSelected;
-	
 	//auto cases
 		public enum Step { Straight, Turn, Straight2, Turn2, SHORT_STRAIGHT, LAUNCH, Straight3, Turn3, Straight4, Straight5, Turn4, Straight6, Straight7, Elevator, Elevator2, CubeOut, CubeIn, CubeOut2,  Done }
 		public Step autoStep = Step.Straight;
@@ -138,27 +117,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		m_chooser.addObject("leftScale", leftScale);
 		m_chooser.addObject("rightScale", rightScale);
 		
-		//Chooser for the starting position
-		positionChooser = new SendableChooser<String>();
-		positionChooser.addObject("left", left);
-		positionChooser.addObject("right", right);
-		positionChooser.addObject("center", center);
-		
-		//Chooser for the movement of the robot
-		movementChooser = new SendableChooser<String>();
-		movementChooser.addObject("Switch", Switch);
-		movementChooser.addObject("SwitchSwitch", SwitchSwitch);
-		movementChooser.addObject("Scale", Scale);
-		movementChooser.addObject("ScaleSwitch", ScaleSwitch);
-		movementChooser.addObject("SwitchScale", SwitchScale);
-		movementChooser.addObject("Portal", Portal);
-		movementChooser.addObject("SwitchLine", SwitchLine);
-		movementChooser.addObject("SwitchSwitchLine", SwitchSwitchLine);
-		movementChooser.addObject("ScaleLine", ScaleLine);
-		
 		//Display these choices in whatever interface we are using
-		SmartDashboard.putData("Robot Position", positionChooser);
-		SmartDashboard.putData("Movement Type", movementChooser);
+		SmartDashboard.putData("Auto Selected", m_chooser);
 		
 		/*limitSwitchUpClimber = new DigitalInput(6);
 		limitSwitchDownClimber = new DigitalInput(7);*/
