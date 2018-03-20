@@ -315,7 +315,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 							completeStop();
 							break;
 						}
-			}
+				} else {
+					if (distance < 200) {
+						driveStraight(0, 0.4);
+					}
+				}
 			return;
 				}
 			}
