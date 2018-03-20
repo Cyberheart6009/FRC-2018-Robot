@@ -114,8 +114,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		m_chooser = new SendableChooser<String>();
 		m_chooser.addObject("leftSwitch", leftSwitch);
 		m_chooser.addObject("rightSwitch", rightSwitch);
-		m_chooser.addObject("leftScale", leftScale);
-		m_chooser.addObject("rightScale", rightScale);
+		m_chooser.addDefault("leftScale", leftScale);
+		m_chooser.addDefault("rightScale", rightScale);
 		
 		//Display these choices in whatever interface we are using
 		SmartDashboard.putData("Auto Selected", m_chooser);
@@ -189,8 +189,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		//Reset the gyro so the heading at the start of the match is 0
+		if ((autoSelected.equalsIgnoreCase(rightScale)) || autoSelected.equalsIgnoreCase(leftScale)) {
+			autoStep = Step.Straight;
+		}
 		resetEncoders();
-		autoStep = Step.Straight;
 		gyroscope.reset();	}
 	
 
