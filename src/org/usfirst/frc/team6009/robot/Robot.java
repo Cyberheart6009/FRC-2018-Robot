@@ -269,7 +269,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		if (autoSelected.equalsIgnoreCase(leftScale) || autoSelected.equalsIgnoreCase(rightScale)) {
 					switch (autoStep) {
 					case Straight:
-						if (distance < 280) {
+						if (distance < 290) {
 							driveStraight(0, 0.4);
 						} else {
 							stop();
@@ -277,13 +277,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						}
 						break;
 					case Turn:
-						if (gameData.charAt(0) == 'L' && autoSelected == leftSwitch){
+						if (gameData.charAt(1) == 'L' && autoSelected == leftScale){
 							if (turnInPlace(90)) {
 								resetEncoders();
 								autoStep = Step.Done;
 							}
 						}
-						else if(gameData.charAt(0) == 'R' && autoSelected == rightSwitch){
+						else if(gameData.charAt(1) == 'R' && autoSelected == rightScale){
 							if (turnInPlace(-90)) {
 								resetEncoders();
 								autoStep = Step.Done;
