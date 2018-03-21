@@ -134,19 +134,11 @@ public class Robot extends IterativeRobot {
 		//Inverting Sparks
 		gripperTwo.setInverted(true);
 		climberOne.setInverted(true);
-<<<<<<< HEAD
-		
-=======
->>>>>>> branch 'jb' of https://github.com/Cyberheart6009/FRC-2018-Robot.git
+
 		// Defines Joystick ports
 		driver = new Joystick(0);
 		operator = new Joystick(1);
-		
-		//LimitSwitch Port Assignment
-<<<<<<< HEAD
-=======
 
->>>>>>> branch 'jb' of https://github.com/Cyberheart6009/FRC-2018-Robot.git
 		cubeSwitch = new DigitalInput(4);
 
 		// Defines the left and right SpeedControllerGroups for our DifferentialDrive class
@@ -325,10 +317,8 @@ public class Robot extends IterativeRobot {
 		else {
 			gripperGroup.set(0);
 		}
-<<<<<<< HEAD
-=======
+
 		
->>>>>>> branch 'jb' of https://github.com/Cyberheart6009/FRC-2018-Robot.git
 		climberGroup.set(operator.getRawAxis(5));
 		elevator.set(operator.getRawAxis(1));
 
