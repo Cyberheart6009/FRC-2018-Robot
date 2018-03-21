@@ -182,6 +182,9 @@ public class Robot extends IterativeRobot {
 		if ((autoSelected.equalsIgnoreCase(RightSwitch)) || autoSelected.equalsIgnoreCase(LeftSwitch)) {
 			autoStep = Step.STRAIGHT;
 		}
+		if ((autoSelected.equalsIgnoreCase(centerSwitch))) {
+			autoStep = Step.STRAIGHT1CENTER;
+		}
 		
 		resetEncoders();
 		gyroscope.reset();
@@ -269,6 +272,86 @@ public class Robot extends IterativeRobot {
 				break;
 			}
 			return;
+		}
+		
+		if (autoSelected.equalsIgnoreCase(centerSwitch)){
+			double distance = getDistance();
+			switch (autoStep) {
+			case STRAIGHT1CENTER:
+				if (getDistance() < 29){
+					driveStraight(0, 0.5);
+				}
+				else{
+					stop();
+					autoStep = Step.TURN1CENTER;
+				}
+				break;
+			case TURN1CENTER:
+				if (gameData.charAt(0) == 'R'){
+					if (turnRight(90)){
+						resetEncoders();
+						autoStep = Step.STRAIGHT2CENTER;
+					}
+				}
+				else{
+					if (turnLeft(-90)) {
+						resetEncoders();
+						autoStep = Step.STRAIGHT2CENTER;
+					}
+				
+				}
+				break;
+			case STRAIGHT2CENTER:
+				if (gameData.charAt(0) == 'R'){
+					if (getDistance() < 59){
+						driveStraight(90, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN2CENTER;
+					}
+				}
+				else{
+					if (getDistance() < 59){
+						driveStraight(-90, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN2CENTER;
+					}
+				
+				}
+				break;
+			case TURN2CENTER:
+				if (gameData.charAt(0) == 'R'){
+					if (turnLeft(0)) {
+						resetEncoders();
+						autoStep = Step.STRAIGHT3CENTER;
+					}
+				}
+				else{
+					if (turnRight(0)){
+						resetEncoders();
+						autoStep = Step.STRAIGHT3CENTER;
+					}
+				
+				}
+				break;
+			case STRAIGHT3CENTER:
+				if (getDistance() < 71){
+					driveStraight(0, 0.5);
+				}
+				else{
+					stop();
+					autoStep = Step.LAUNCH;
+				}
+				break;
+			case LAUNCH:
+				autoStep = Step.DONE;
+			case DONE:
+				break;
+			}
+		return;
 		}
 	}
 
