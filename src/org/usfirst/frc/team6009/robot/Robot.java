@@ -189,11 +189,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
 		//Reset the gyro so the heading at the start of the match is 0
-		if ((autoSelected.equalsIgnoreCase(rightScale)) || autoSelected.equalsIgnoreCase(leftScale)) {
-			autoStep = Step.Straight;
-		}
 		resetEncoders();
-		gyroscope.reset();	}
+		gyroscope.reset();
+		autoStep = Step.Straight;
+		}
 	
 
 	/**
@@ -266,67 +265,62 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			case Done:
 				break;
 			}
-			if (autoSelected.equalsIgnoreCase(leftScale) || autoSelected.equalsIgnoreCase(rightScale)) {
-				if (gameData.length() > 0) {
-					if (gameData.charAt(1) == 'L') {
-						switch (autoStep) {
-						case Straight:
-							if (distance < 280) {
-								driveStraight(0, 0.4);
-							} else {
-								stop();
-								autoStep = Step.Turn;
-							}
-							break;
-						case Turn:
-							if (autoSelected == leftScale) {
-								if (turnInPlace(90)) {
-									resetEncoders();
-									rotationPID.setEnabled(false);
-									autoStep = Step.Done;
-								}
-							}
-							else {
-								if (turnInPlace(-90)) {
-									resetEncoders();
-									rotationPID.setEnabled(false);
-									autoStep = Step.Done;
-								}
-							}
-							break;
-						case CubeOut:
-							if (height < 75) {
-								elevatorGroup.set(0.4);
-							} else {
-								if (distance < 10) {
-									driveStraight(90, 0.4);
-									elevatorGroup.set(0.05);
-								} else {
-									if (!limitSwitchGripper.get()) {
-										completeStop();
-										resetEncoders();
-										autoStep = Step.Straight2;
-									} else {
-										elevatorGroup.set(0.05);
-										gripperGroup.set(1);
-									}
-								}
-							}
-							break;
-						case Done:
-							completeStop();
-							break;
-						}
-				} else {
-					if (distance < 200) {
-						driveStraight(0, 0.4);
-					}
-				}
-			return;
-				}
-			}
 		}
+		if (autoSelected.equalsIgnoreCase(leftScale) || autoSelected.equalsIgnoreCase(rightScale)) {
+					switch (autoStep) {
+					case Straight:
+						if (distance < 280) {
+							driveStraight(0, 0.4);
+						} else {
+							stop();
+							autoStep = Step.Turn;
+						}
+						break;
+					case Turn:
+						if (gameData.charAt(0) == 'L' && autoSelected == leftSwitch){
+							if (turnInPlace(90)) {
+								resetEncoders();
+								autoStep = Step.Done;
+							}
+						}
+						else if(gameData.charAt(0) == 'R' && autoSelected == rightSwitch){
+							if (turnInPlace(-90)) {
+								resetEncoders();
+								autoStep = Step.Done;
+							}
+						}
+						else{
+							stop();
+							autoStep = Step.Done;
+						}
+						break;
+					case CubeOut:
+						if (height < 75) {
+							elevatorGroup.set(0.4);
+						} else {
+							if (distance < 10) {
+								driveStraight(90, 0.4);
+								elevatorGroup.set(0.05);
+							} else {
+								if (!limitSwitchGripper.get()) {
+									completeStop();
+									resetEncoders();
+									autoStep = Step.Straight2;
+								} else {
+									elevatorGroup.set(0.05);
+									gripperGroup.set(1);
+								}
+							}
+						}
+						break;
+					case Done:
+						completeStop();
+						break;	
 			}
+		return;
+		}
+	}
+			
 
 	/**
 	 * This function is called periodically during operator control.
@@ -520,8 +514,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		// set the motors based on the inputted speed
 		leftBack.set(leftSpeed);
 		leftFront.set(leftSpeed);
-		rightBack.set(rightSpeed);
-		rightFront.set(rightSpeed);
+		rightBack.set(-rightSpeed);
+		rightFront.set(-rightSpeed);
 	}
 	
     private void updateSmartDashboard() {
