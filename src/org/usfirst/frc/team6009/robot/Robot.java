@@ -55,6 +55,8 @@ public class Robot extends IterativeRobot {
 	private static final String DriveStraight = "Straight Drive";
 	private static final String RightSwitch = "Right Switch";
 	private static final String LeftSwitch = "Left Switch";
+	private static final String LeftScale = "Left Scale";
+	private static final String RightScale = "Right Scale";
 	private String autoSelected;
 	
 	//Variables
@@ -115,7 +117,9 @@ public class Robot extends IterativeRobot {
 		m_chooser.addObject("Center Switch", centerSwitch);
 		m_chooser.addObject("My Auto", DriveStraight);
 		m_chooser.addDefault("Right Switch", RightSwitch);
-		m_chooser.addDefault("Left Switch", LeftSwitch);		
+		m_chooser.addDefault("Left Switch", LeftSwitch);
+		m_chooser.addDefault("Left Scale", LeftScale);
+		m_chooser.addDefault("Right Scale", RightScale);
 		SmartDashboard.putData("Auto choices", m_chooser);
 		
 		
@@ -273,7 +277,52 @@ public class Robot extends IterativeRobot {
 			}
 			return;
 		}
-		
+		if (autoSelected.equalsIgnoreCase(RightScale) || autoSelected.equalsIgnoreCase(LeftScale)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case STRAIGHT:
+				if (getDistance() < 280){
+					driveStraight(0, 0.5);
+				}
+				else{
+					stop();
+					autoStep = Step.TURN;
+				}
+				break;
+			case TURN:
+				if (gameData.charAt(0) == 'R' && autoSelected == RightScale){
+					if (turnLeft(-90)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else if(gameData.charAt(0) == 'L' && autoSelected == LeftScale){
+					if (turnRight(90)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else{
+					stop();
+					autoStep = Step.DONE;
+				}
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 3000) {
+					gripperGroup.set(1);
+				}
+				else{
+					gripperGroup.set(0);
+					autoStep = Step.DONE;
+				}
+				break;
+			case DONE:
+				break;
+			}
+			return;
+		}
 		if (autoSelected.equalsIgnoreCase(centerSwitch)){
 			double distance = getDistance();
 			switch (autoStep) {
