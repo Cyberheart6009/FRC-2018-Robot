@@ -227,12 +227,14 @@ public class Robot extends IterativeRobot {
 				if (gameData.charAt(0) == 'R' && autoSelected == RightSwitch){
 					if (turnLeft(-90)) {
 						resetEncoders();
+						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
 					}
 				}
 				else if(gameData.charAt(0) == 'L' && autoSelected == LeftSwitch){
 					if (turnRight(90)) {
 						resetEncoders();
+						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
 					}
 				}
@@ -243,7 +245,7 @@ public class Robot extends IterativeRobot {
 				break;
 			case SHORT_STRAIGHT:
 				if (autoSelected == LeftSwitch){
-					if (getDistance() < 40){
+					if (getDistance() < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
 						driveStraight(90, 0.4);
 					}
 					else{
@@ -253,7 +255,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else{
-					if (getDistance() < 40){
+					if (getDistance() < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
 						driveStraight(-90, 0.4);
 					}
 					else{
@@ -264,8 +266,8 @@ public class Robot extends IterativeRobot {
 				}				
 				break;
 			case LAUNCH:
-				if ((System.currentTimeMillis() - timerStart) < 500) {
-					gripperGroup.set(0.8);
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripperGroup.set(1);
 				}
 				else{
 					gripperGroup.set(0);
