@@ -37,16 +37,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 
 import org.spectrum3847.RIOdroid.RIOadb;
 import org.spectrum3847.RIOdroid.RIOdroid;
-import org.usfirst.frc.team6009.robot.Robot.Step;
-
 import com.kauailabs.navx.frc.AHRS;
-
-/**
-	THIS BRANCH WAS CREATED TO JOIN CODE FROM BRANCHES JB, KM, RZ.
-	THIS CODE IS FOR THE RYERSON DISTRICT EVENT
- */
-
-
 
 public class Robot extends IterativeRobot {
 	
@@ -70,15 +61,16 @@ public class Robot extends IterativeRobot {
 	boolean initializeADB = false;
 	String gameData;
 	long timerStart;
+	boolean TP_Active, TP_Trigger = false;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
 	
 	// SpeedController Object creations - Define all names of motors here
-	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevatorOne, elevatorTwo, climberOne, climberTwo, gripperOne, gripperTwo;
+	SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevatorOne, elevatorTwo, climberOne, climberTwo, TP_motor;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis, climberGroup, gripperGroup, elevator;
+	SpeedControllerGroup leftChassis, rightChassis, climberGroup, elevator;
 	
 	// DifferentialDrive replaces the RobotDrive Class from previous years
 	DifferentialDrive chassis;
@@ -132,11 +124,10 @@ public class Robot extends IterativeRobot {
 		climberTwo = new Spark(5);
 		elevatorOne = new Spark(6);
 		elevatorTwo = new Spark(7);
-		gripperOne = new Spark(8);
-		gripperTwo = new Spark(9);
+		gripper = new Spark(8);
+		TP_motor = new Spark(9);
 		
 		//Inverting Sparks
-		gripperTwo.setInverted(true);
 		climberOne.setInverted(true);
 
 		// Defines Joystick ports
@@ -149,7 +140,6 @@ public class Robot extends IterativeRobot {
 		leftChassis = new SpeedControllerGroup(leftFront, leftBack);
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
-		gripperGroup = new SpeedControllerGroup(gripperOne, gripperTwo);
 		elevator = new SpeedControllerGroup(elevatorOne, elevatorTwo);
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
@@ -267,10 +257,10 @@ public class Robot extends IterativeRobot {
 				break;
 			case LAUNCH:
 				if ((System.currentTimeMillis() - timerStart) < 2000) {
-					gripperGroup.set(1);
+					gripper.set(1);
 				}
 				else{
-					gripperGroup.set(0);
+					gripper.set(0);
 					autoStep = Step.DONE;
 				}
 				break;
@@ -313,10 +303,10 @@ public class Robot extends IterativeRobot {
 				break;
 			case LAUNCH:
 				if ((System.currentTimeMillis() - timerStart) < 3000) {
-					gripperGroup.set(1);
+					gripper.set(1);
 				}
 				else{
-					gripperGroup.set(0);
+					gripper.set(0);
 					autoStep = Step.DONE;
 				}
 				break;
@@ -440,16 +430,16 @@ public class Robot extends IterativeRobot {
 		
 		// OPERATOR CONTROLS
 		if (aButtonOp) {
-			gripperGroup.set(1);
+			gripper.set(1);
 		}
 		else if (yButtonOp) {
-			gripperGroup.set(0.5);
+			gripper.set(0.5);
 		}
 		else if (bButtonOp) {
-			gripperGroup.set(-1);
+			gripper.set(-1);
 		}
 		else {
-			gripperGroup.set(0);
+			gripper.set(0);
 		}
 
 		
@@ -579,12 +569,7 @@ public class Robot extends IterativeRobot {
 	
 	private void tipPrevention(){
 		if (gyroscope.getPitch() > 10){
-			leftChassis.set(0.5);
-			rightChassis.set(0.5);
-		}
-		if (gyroscope.getPitch() < -10){
-			leftChassis.set(-0.5);
-			rightChassis.set(-0.5);
+			// bar out
 		}
 	}
 	
@@ -625,10 +610,10 @@ public class Robot extends IterativeRobot {
 	
 	private boolean turnRight(double targetAngle){
 		// We want to turn in place to 60 degrees 
-		leftBack.set(0.3);
-		leftFront.set(0.3);
-		rightBack.set(0.3);
-		rightFront.set(0.3);
+		leftBack.set(0.45);
+		leftFront.set(0.45);
+		rightBack.set(0.45);
+		rightFront.set(0.45);
 
 		System.out.println("Turning Right");
 		
@@ -641,10 +626,10 @@ public class Robot extends IterativeRobot {
 	}
 	private boolean turnLeft(double targetAngle){
 		// We want to turn in place to 60 degrees 
-		leftBack.set(-0.3);
-		leftFront.set(-0.3);
-		rightBack.set(-0.3);
-		rightFront.set(-0.3);
+		leftBack.set(-0.45);
+		leftFront.set(-0.45);
+		rightBack.set(-0.45);
+		rightFront.set(-0.45);
 
 		double currentAngle = gyroscope.getAngle();
 		if (currentAngle <= targetAngle + 2){
