@@ -62,6 +62,7 @@ public class Robot extends IterativeRobot {
 	String gameData;
 	long timerStart;
 	boolean TP_Active, TP_Trigger = false;
+	double angle = 0;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -124,8 +125,8 @@ public class Robot extends IterativeRobot {
 		climberTwo = new Spark(5);
 		elevatorOne = new Spark(6);
 		elevatorTwo = new Spark(7);
-		gripper = new Spark(8);
-		TP_motor = new Spark(9);
+		TP_motor = new Spark(8);
+		gripper = new Spark(9);
 		
 		//Inverting Sparks
 		climberOne.setInverted(true);
@@ -205,7 +206,7 @@ public class Robot extends IterativeRobot {
 			double distance = getDistance();
 			switch (autoStep) {
 			case STRAIGHT:
-				if (getDistance() < 160){
+				if (distance < 160){
 					driveStraight(0, 0.5);
 				}
 				else{
@@ -235,7 +236,7 @@ public class Robot extends IterativeRobot {
 				break;
 			case SHORT_STRAIGHT:
 				if (autoSelected == LeftSwitch){
-					if (getDistance() < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
+					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
 						driveStraight(90, 0.4);
 					}
 					else{
@@ -245,7 +246,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else{
-					if (getDistance() < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
+					if (distance < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
 						driveStraight(-90, 0.4);
 					}
 					else{
@@ -273,7 +274,7 @@ public class Robot extends IterativeRobot {
 			double distance = getDistance();
 			switch (autoStep) {
 			case STRAIGHT:
-				if (getDistance() < 280){
+				if (distance < 280){
 					driveStraight(0, 0.5);
 				}
 				else{
@@ -319,7 +320,7 @@ public class Robot extends IterativeRobot {
 			double distance = getDistance();
 			switch (autoStep) {
 			case STRAIGHT1CENTER:
-				if (getDistance() < 29){
+				if (distance < 29){
 					driveStraight(0, 0.5);
 				}
 				else{
@@ -344,7 +345,7 @@ public class Robot extends IterativeRobot {
 				break;
 			case STRAIGHT2CENTER:
 				if (gameData.charAt(0) == 'R'){
-					if (getDistance() < 59){
+					if (distance < 59){
 						driveStraight(90, 0.5);
 					}
 					else{
@@ -353,7 +354,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else{
-					if (getDistance() < 59){
+					if (distance < 59){
 						driveStraight(-90, 0.5);
 					}
 					else{
@@ -379,7 +380,7 @@ public class Robot extends IterativeRobot {
 				}
 				break;
 			case STRAIGHT3CENTER:
-				if (getDistance() < 71){
+				if (distance < 71){
 					driveStraight(0, 0.5);
 				}
 				else{
@@ -423,7 +424,6 @@ public class Robot extends IterativeRobot {
 			resetEncoders();
 			gyroscope.reset();
 		} 
-		
 		if (aButton){
 			turnToBox();
 		}*/
@@ -541,8 +541,6 @@ public class Robot extends IterativeRobot {
 	private void turnToBox(){
 		double Center_X = androidData();
 		//System.out.print("Offset: " + degreeOffset);
-		
-		// FIXME: Already removed the not before turnLeft/ turnRight
 		if (Center_X > 170 && Center_X != 0){
 			double degreeOffset = (170 - Center_X)*DEGREES_PER_PIXEL;
 			double boxAngle = gyroscope.getAngle()%360 + degreeOffset;
@@ -568,8 +566,17 @@ public class Robot extends IterativeRobot {
 	
 	
 	private void tipPrevention(){
-		if (gyroscope.getPitch() > 10){
-			// bar out
+		// TP_Active TP_Trigger
+		angle = gyroscope.getPitch();
+		if (timerStart != 0){
+		}
+		if (angle > 15 && angle < 70){
+			
+			TP_Active = true;
+			TP_Trigger = true;
+		}
+		else if(angle > 75){
+			TP_motor.set(0);
 		}
 	}
 	
@@ -605,8 +612,6 @@ public class Robot extends IterativeRobot {
 		rightBack.set(0);
 		rightFront.set(0);
 	}
-	
-	//slow motor speeds while turning
 	
 	private boolean turnRight(double targetAngle){
 		// We want to turn in place to 60 degrees 
