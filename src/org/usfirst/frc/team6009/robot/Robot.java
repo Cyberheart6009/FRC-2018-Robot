@@ -63,6 +63,7 @@ public class Robot extends IterativeRobot {
 	long timerStart;
 	boolean TP_Active, TP_Trigger = false;
 	double angle = 0;
+	double old_angle = 0;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -402,7 +403,7 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
-		
+		tipPrevention();
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
 		
 		// Get Joystick Buttons
@@ -566,18 +567,26 @@ public class Robot extends IterativeRobot {
 	
 	
 	private void tipPrevention(){
-		// TP_Active TP_Trigger
 		angle = gyroscope.getPitch();
-		if (timerStart != 0){
+		System.out.println(angle);
+		
+		if ((System.currentTimeMillis() - timerStart) < 500){
+			TP_motor.set(1.0);
 		}
-		if (angle > 15 && angle < 70){
-			
-			TP_Active = true;
-			TP_Trigger = true;
+		else if (old_angle > 10 && angle <= 10 && TP_Active){
+			timerStart = System.currentTimeMillis();
+		}
+		else if (angle > 10 && angle < 70){
+			TP_motor.set(-1.0);
 		}
 		else if(angle > 75){
 			TP_motor.set(0);
 		}
+		else{
+			TP_motor.set(0);
+		}
+		old_angle = angle;
+		
 	}
 	
 	private void driveStraight(double heading, double speed) {
