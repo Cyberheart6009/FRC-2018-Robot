@@ -146,6 +146,7 @@ public class Robot extends IterativeRobot {
 		
 		// Inverts the right side of the drive train to account for the motors being physically flipped
 		rightChassis.setInverted(true);
+		//TP_motor.setInverted(true);
 		
 		// Defines our DifferentalDrive object with both sides of our drivetrain
 		chassis = new DifferentialDrive(leftChassis, rightChassis);
@@ -424,9 +425,15 @@ public class Robot extends IterativeRobot {
 			elevatorEncoder.reset();
 			resetEncoders();
 			gyroscope.reset();
-		} 
+		} *//*
 		if (aButton){
-			turnToBox();
+			TP_motor.set(1);
+		}
+		else if (bButton){
+			TP_motor.set(-1);
+		}
+		else{
+			TP_motor.set(0);
 		}*/
 		
 		// OPERATOR CONTROLS
@@ -568,15 +575,15 @@ public class Robot extends IterativeRobot {
 	
 	private void tipPrevention(){
 		angle = gyroscope.getPitch();
-		System.out.println(angle);
+		//System.out.println(angle); - Debug line
 		
-		if ((System.currentTimeMillis() - timerStart) < 500){
+		if ((System.currentTimeMillis() - timerStart) < 300){
 			TP_motor.set(1.0);
 		}
-		else if (old_angle > 10 && angle <= 10 && TP_Active){
+		else if (old_angle > 0 && angle <= 0){
 			timerStart = System.currentTimeMillis();
 		}
-		else if (angle > 10 && angle < 70){
+		else if (angle > 0 && angle < 70){
 			TP_motor.set(-1.0);
 		}
 		else if(angle > 75){
