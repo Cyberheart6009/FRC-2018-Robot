@@ -571,8 +571,9 @@ public class Robot extends IterativeRobot {
 				break;
 
 			case LIFT:
-				if (getElevatorHeight() < 172){
-					elevator.set(0.5);
+				// lift to 127 !!!
+				if (getElevatorHeight() < 50){
+					elevator.set(-0.5);
 				}
 				else{
 					stop();
