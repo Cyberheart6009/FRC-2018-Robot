@@ -34,6 +34,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.SerialPort;
+import edu.wpi.first.wpilibj.SerialPort.Port;
 
 import org.spectrum3847.RIOdroid.RIOadb;
 import org.spectrum3847.RIOdroid.RIOdroid;
@@ -46,8 +48,13 @@ public class Robot extends IterativeRobot {
 	private static final String DriveStraight = "Straight Drive";
 	private static final String RightSwitch = "Right Switch";
 	private static final String LeftSwitch = "Left Switch";
+	private static final String DoubleRightSwitch = "Double Right Switch";
+	private static final String DoubleLeftSwitch = "Double Left Switch";
 	private static final String LeftScale = "Left Scale";
 	private static final String RightScale = "Right Scale";
+	private static final String LeftAngleScale = "Left Angle Scale";
+	private static final String RightAngleScale = "Right Angle Scale";
+	private static final String centerOppositeSwitch = "Center Switch";
 	private String autoSelected;
 	
 	//Variables
@@ -97,8 +104,11 @@ public class Robot extends IterativeRobot {
 	double kP = 0.03;
 	
 	//Auto variables
-	public enum Step {STRAIGHT, SHORT_STRAIGHT, STRAIGHT1CENTER, TURN1CENTER, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, TURN, LAUNCH, DONE};
+	public enum Step {STRAIGHT, SHORT_STRAIGHT, STRAIGHT1CENTER, TURN1CENTER, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, TURN, LIFT, TRACK, LAUNCH, DONE};
 	public Step autoStep = Step.STRAIGHT;
+	
+	//Serial Port Communication
+	//public static final SerialPort.Port kUSB2;
 	
 	
 	/**
@@ -109,13 +119,21 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		// Adds all of our previously created auto modes into the smartdashboard chooser
 		m_chooser.addObject("Center Switch", centerSwitch);
-		m_chooser.addObject("My Auto", DriveStraight);
-		m_chooser.addDefault("Right Switch", RightSwitch);
-		m_chooser.addDefault("Left Switch", LeftSwitch);
-		m_chooser.addDefault("Left Scale", LeftScale);
-		m_chooser.addDefault("Right Scale", RightScale);
+		m_chooser.addDefault("My Auto", DriveStraight);
+		m_chooser.addObject("Right Switch", RightSwitch);
+		m_chooser.addObject("Left Switch", LeftSwitch);
+		m_chooser.addObject("Double Left Switch", DoubleLeftSwitch);
+		m_chooser.addObject("Double Right Switch", DoubleRightSwitch);
+		m_chooser.addObject("Left Scale", LeftScale);
+		m_chooser.addObject("Right Scale", RightScale);
+		m_chooser.addObject("Left Angle Scale", LeftAngleScale);
+		m_chooser.addObject("Right Angle Scale", RightAngleScale);
+		m_chooser.addObject("Center Scale", centerOppositeSwitch);
 		SmartDashboard.putData("Auto choices", m_chooser);
+		//final SerialPort.Port kUSB2;
 		
+		//SerialPort name = new SerialPort(9600,);
+
 		
 		// Defines all the ports of each of the motors
 		leftFront = new Spark(0);
@@ -179,7 +197,7 @@ public class Robot extends IterativeRobot {
 		if ((autoSelected.equalsIgnoreCase(RightSwitch)) || autoSelected.equalsIgnoreCase(LeftSwitch)) {
 			autoStep = Step.STRAIGHT;
 		}
-		if ((autoSelected.equalsIgnoreCase(centerSwitch))) {
+		if ((autoSelected.equalsIgnoreCase(centerSwitch)) || (autoSelected.equalsIgnoreCase(centerOppositeSwitch))) {
 			autoStep = Step.STRAIGHT1CENTER;
 		}
 		
@@ -231,7 +249,7 @@ public class Robot extends IterativeRobot {
 						autoStep = Step.SHORT_STRAIGHT;
 					}
 				}
-				else{
+				else {
 					stop();
 					autoStep = Step.DONE;
 				}
@@ -247,7 +265,7 @@ public class Robot extends IterativeRobot {
 						autoStep = Step.LAUNCH;
 					}
 				}
-				else{
+				else {
 					if (distance < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
 						driveStraight(-90, 0.4);
 					}
@@ -272,31 +290,164 @@ public class Robot extends IterativeRobot {
 			}
 			return;
 		}
-		if (autoSelected.equalsIgnoreCase(RightScale) || autoSelected.equalsIgnoreCase(LeftScale)) {
+		/*if (autoSelected.equalsIgnoreCase(RightSwitchTest) || autoSelected.equalsIgnoreCase(LeftSwitchTest)) {
 			double distance = getDistance();
 			switch (autoStep) {
 			case STRAIGHT:
-				if (distance < 280){
+				if (distance < 160){
 					driveStraight(0, 0.5);
 				}
 				else{
 					stop();
+					resetEncoders();
 					autoStep = Step.TURN;
+				}
+				if ((gameData.charAt(0) == 'L' && autoSelected == RightSwitchTest) || (gameData.charAt(0) == 'R' && autoSelected == LeftSwitchTest)) {
+					if (distance < 240){
+						driveStraight(0, 0.5);
+					}
+					else{
+						stop();
+						resetEncoders();
+						autoStep = Step.TURN;
+					}
 				}
 				break;
 			case TURN:
-				if (gameData.charAt(0) == 'R' && autoSelected == RightScale){
+				if (gameData.charAt(0) == 'R' && autoSelected == RightSwitchTest){
 					if (turnLeft(-90)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
 					}
 				}
-				else if(gameData.charAt(0) == 'L' && autoSelected == LeftScale){
+				else if(gameData.charAt(0) == 'L' && autoSelected == LeftSwitchTest){
 					if (turnRight(90)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else if (gameData.charAt(0) == 'L' && autoSelected == RightSwitchTest){
+					if (turnLeft(-90)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else if(gameData.charAt(0) == 'R' && autoSelected == LeftSwitchTest){
+					if (turnRight(90)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else {
+					stop();
+					autoStep = Step.DONE;
+				}
+				break;
+			case SHORT_STRAIGHT:
+				if (autoSelected == LeftSwitch && gameData.charAt(0) == 'L'){
+					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
+						driveStraight(90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}
+				else if (gameData.charAt(0) == 'R' && autoSelected == RightSwitch){
+					if (distance < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
+						driveStraight(-90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}		
+				if (autoSelected == LeftSwitch && gameData.charAt(0) == 'R'){
+					if (distance < 117 || ((System.currentTimeMillis() - timerStart) > 1000)){
+						driveStraight(90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}
+				else if (gameData.charAt(0) == 'L' && autoSelected == RightSwitch){
+					if (distance < 117 || ((System.currentTimeMillis() - timerStart) < 1000)){
+						driveStraight(-90, 0.4);
+					}
+					else{
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+				}				
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripper.set(1);
+				}
+				else{
+					gripper.set(0);
+					autoStep = Step.DONE;
+				}
+				break;
+			case DONE:
+				break;
+			}
+			return;
+		}*/
+		if (autoSelected.equalsIgnoreCase(RightScale) || autoSelected.equalsIgnoreCase(LeftScale)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case STRAIGHT:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightScale){
+					if (distance < 280){
+						driveStraight(0, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftScale){
+					if (distance < 280){
+						driveStraight(0, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN;
+					}
+				}
+				else{
+					if (distance < 180){
+						driveStraight(0, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.DONE;
+					}
+				}
+				break;
+			case TURN:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightScale){
+					if (turnLeft(-90)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT;
+					}
+				}
+				else if(gameData.charAt(1) == 'L' && autoSelected == LeftScale){
+					if (turnRight(90)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT;
 					}
 				}
 				else{
@@ -304,8 +455,74 @@ public class Robot extends IterativeRobot {
 					autoStep = Step.DONE;
 				}
 				break;
+			case LIFT:
+				if (getElevatorHeight() < 80){
+					elevator.set(0.8);
+				}
+				else{
+					stop();
+					elevator.set(0);
+					autoStep = Step.LAUNCH;
+				}
+				break;
 			case LAUNCH:
-				if ((System.currentTimeMillis() - timerStart) < 3000) {
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripper.set(1);
+				}
+				else{
+					gripper.set(0);
+					autoStep = Step.DONE;
+				}
+				break;
+			case DONE:
+				break;
+			}
+			return;
+		}
+		if (autoSelected.equalsIgnoreCase(RightAngleScale) || autoSelected.equalsIgnoreCase(LeftAngleScale)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case STRAIGHT:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightAngleScale){
+					if (distance < 244){
+						driveStraight(-4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.LIFT;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
+					if (distance < 244){
+						driveStraight(4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.LIFT;
+					}
+				}
+				else{
+					if (distance < 180){
+						driveStraight(0, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.DONE;
+					}
+				}
+				break;
+			case LIFT:
+				if (getElevatorHeight() < 80){
+					elevator.set(0.8);
+				}
+				else{
+					stop();
+					elevator.set(0);
+					autoStep = Step.LAUNCH;
+				}
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
 					gripper.set(1);
 				}
 				else{
@@ -370,19 +587,21 @@ public class Robot extends IterativeRobot {
 				if (gameData.charAt(0) == 'R'){
 					if (turnLeft(0)) {
 						resetEncoders();
+						timerStart = System.currentTimeMillis();
 						autoStep = Step.STRAIGHT3CENTER;
 					}
 				}
 				else{
 					if (turnRight(0)){
 						resetEncoders();
+						timerStart = System.currentTimeMillis();
 						autoStep = Step.STRAIGHT3CENTER;
 					}
 				
 				}
 				break;
 			case STRAIGHT3CENTER:
-				if (distance < 71){
+				if (distance < 71 || (System.currentTimeMillis() - timerStart) > 2000){
 					driveStraight(0, 0.5);
 				}
 				else{
@@ -391,7 +610,14 @@ public class Robot extends IterativeRobot {
 				}
 				break;
 			case LAUNCH:
-				autoStep = Step.DONE;
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripper.set(1);
+				}
+				else{
+					gripper.set(0);
+					autoStep = Step.DONE;
+				}
+				break;
 			case DONE:
 				break;
 			}
