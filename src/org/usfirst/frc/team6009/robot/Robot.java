@@ -150,7 +150,7 @@ public class Robot extends IterativeRobot {
 		gripper = new Spark(9);
 		
 		//Inverting Sparks
-		climberOne.setInverted(true);
+		//climberOne.setInverted(true);
 		
 
 		// Defines Joystick ports
@@ -164,6 +164,8 @@ public class Robot extends IterativeRobot {
 		rightChassis = new SpeedControllerGroup(rightFront, rightBack);
 		climberGroup = new SpeedControllerGroup(climberOne, climberTwo);
 		elevator = new SpeedControllerGroup(elevatorOne, elevatorTwo);
+		
+		climberGroup.setInverted(true);
 		
 		elevator.setInverted(true);
 		gripper.setInverted(true);
@@ -206,8 +208,12 @@ public class Robot extends IterativeRobot {
 		if ((autoSelected.equalsIgnoreCase(centerSwitch)) || (autoSelected.equalsIgnoreCase(centerOppositeSwitch))) {
 			autoStep = Step.STRAIGHT1CENTER;
 		}
+		else{
+			autoStep = Step.STRAIGHT;
+		}
 		
 		resetEncoders();
+		elevatorEncoder.reset();
 		gyroscope.reset();
 	}
 
@@ -218,7 +224,7 @@ public class Robot extends IterativeRobot {
 	public void autonomousPeriodic() {
 		updateSmartDashboard();
 		if (autoSelected == DriveStraight) {
-			if (getDistance() < 160){
+			if (getDistance() < 150){
 				driveStraight(0, 0.5);
 				System.out.println("Going Straight");
 			}
@@ -232,7 +238,7 @@ public class Robot extends IterativeRobot {
 			double distance = getDistance();
 			switch (autoStep) {
 			case STRAIGHT:
-				if (distance < 160){
+				if (distance < 155){
 					driveStraight(0, 0.5);
 				}
 				else{
@@ -262,23 +268,23 @@ public class Robot extends IterativeRobot {
 				break;
 			case SHORT_STRAIGHT:
 				if (autoSelected == LeftSwitch){
-					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
-						driveStraight(90, 0.4);
-					}
-					else{
+					if (distance > 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
 						stop();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LAUNCH;
+					}
+					else{
+						driveStraight(90, 0.4);
 					}
 				}
 				else {
-					if (distance < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
-						driveStraight(-90, 0.4);
-					}
-					else{
+					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
 						stop();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LAUNCH;
+					}
+					else{
+						driveStraight(-90, 0.4);
 					}
 				}				
 				break;
@@ -522,7 +528,7 @@ public class Robot extends IterativeRobot {
 					}
 					else{
 						stop();
-						autoStep = Step.LIFT;
+						autoStep = Step.TURN;
 					}
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
@@ -531,7 +537,7 @@ public class Robot extends IterativeRobot {
 					}
 					else{
 						stop();
-						autoStep = Step.LIFT;
+						autoStep = Step.TURN;
 					}
 				}
 				else{
@@ -544,9 +550,29 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				break;
+			case TURN:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightAngleScale){
+					if (turnLeft(-30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
+					if (turnRight(30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT;
+					}
+				}
+				else{
+					autoStep = Step.DONE;
+					}
+				break;
+
 			case LIFT:
-				if (getElevatorHeight() < 80){
-					elevator.set(0.8);
+				if (getElevatorHeight() < 172){
+					elevator.set(0.5);
 				}
 				else{
 					stop();
@@ -836,8 +862,8 @@ public class Robot extends IterativeRobot {
 		angle = gyroscope.getPitch();
 		//System.out.println(angle); - Debug line
 		
-		if ((System.currentTimeMillis() - timerStart) < 300){
-			TP_motor.set(1.0);
+		if ((System.currentTimeMillis() - timerStart) < 450){
+			TP_motor.set(0.6);
 		}
 		else if (old_angle > 0 && angle <= 0){
 			timerStart = System.currentTimeMillis();
