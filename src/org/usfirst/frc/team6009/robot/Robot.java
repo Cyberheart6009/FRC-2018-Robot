@@ -58,6 +58,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	final String rightSwitch = "rightSwitch";
 	final String leftScale = "leftScale";
 	final String rightScale = "rightScale";
+	final String rightAngleScale = "rightAngleScale";
+	final String leftAngleScale = "leftAngleScale";
+	final String rightBothSideScale = "rightBothSideScale";
+	final String leftBothSideScale = "leftBothSideScale";
 	private String autoSelected;
 
 	
@@ -71,17 +75,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	String gameData;
 	
 	//auto cases
-		public enum Step { Straight, Turn, Straight2, Turn2, SHORT_STRAIGHT, LAUNCH, Straight3, Turn3, Straight4, Straight5, Turn4, Straight6, Straight7, Elevator, Elevator2, CubeOut, CubeIn, CubeOut2,  Done }
+		public enum Step { Straight, Turn, Straight2, Turn2, SHORT_STRAIGHT, LAUNCH, Lift, Straight3, Turn3, Straight4, Straight5, Turn4, Straight6, Straight7, Elevator, Elevator2, CubeOut, CubeIn, CubeOut2,  Done }
 		public Step autoStep = Step.Straight;
 		public long timerStart;
 
 	//Limit Switches
 	DigitalInput limitSwitchUpElevator, limitSwitchDownElevator, limitSwitchUpClimber, limitSwitchDownClimber, limitSwitchGripper;
 
-    SpeedController leftFront, leftBack, rightFront, rightBack, gripper1, gripper2, elevator1, elevator2, climber1, climber2, PIDSpeed;
+    SpeedController leftFront, leftBack, rightFront, rightBack, gripper, elevator1, elevator2, climber1, climber2, PIDSpeed;
 	
 	// Speed controller group used for new differential drive class
-	SpeedControllerGroup leftChassis, rightChassis, elevatorGroup, gripperGroup;
+	SpeedControllerGroup leftChassis, rightChassis, elevator;
 	
 	Encoder leftEncoder, rightEncoder, elevatorEncoder;
 	
@@ -117,6 +121,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		m_chooser.addObject("rightSwitch", rightSwitch);
 		m_chooser.addDefault("leftScale", leftScale);
 		m_chooser.addDefault("rightScale", rightScale);
+		m_chooser.addObject("rightAngleScale", rightAngleScale);
+		m_chooser.addObject("leftAngleScale", leftAngleScale);
+		m_chooser.addObject("rightBothSideScale", rightBothSideScale);
+		m_chooser.addObject("leftBothSideScale", leftBothSideScale);
 		
 		//Display these choices in whatever interface we are using
 		SmartDashboard.putData("Auto Selected", m_chooser);
@@ -129,18 +137,15 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		elevator2 = new Spark(7);
 		climber1 = new Spark(4);
 		climber2 = new Spark(5);
-		gripper1 = new Spark(8);
-		gripper2 = new Spark(9);
+		gripper = new Spark(9);
 		
-		elevatorGroup = new SpeedControllerGroup(elevator1, elevator2);
-		gripperGroup = new SpeedControllerGroup(gripper1, gripper2);
+		elevator = new SpeedControllerGroup(elevator1, elevator2);
 		
 		//leftElevator = new Encoder(4, 5);
 		//rightElevator = new Encoder(6, 7);
 		
 		elevator2.setInverted(true);
 		climber2.setInverted(true);
-		gripper2.setInverted(true);
 		
 		leftFront = new Spark(0);
 		leftBack = new Spark(1);
@@ -201,12 +206,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void autonomousPeriodic() {
-		double distance = getDistance();
-		double height = getElevatorheight();
 		if (autoSelected.equalsIgnoreCase(rightSwitch) || autoSelected.equalsIgnoreCase(leftSwitch)) {
+			double distance = getDistance();
 			switch (autoStep) {
 			case Straight:
-				if (getDistance() < 160){
+				if (distance < 155){
 					driveStraight(0, 0.5);
 				}
 				else{
@@ -218,56 +222,60 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				if (gameData.charAt(0) == 'R' && autoSelected == rightSwitch){
 					if (turnLeft(-90)) {
 						resetEncoders();
+						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
 					}
 				}
 				else if(gameData.charAt(0) == 'L' && autoSelected == leftSwitch){
 					if (turnRight(90)) {
 						resetEncoders();
+						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
 					}
 				}
-				else{
+				else {
 					stop();
 					autoStep = Step.Done;
 				}
 				break;
 			case SHORT_STRAIGHT:
 				if (autoSelected == leftSwitch){
-					if (getDistance() < 40){
+					if (distance > 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
+						stop();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LAUNCH;
+					}
+					else{
 						driveStraight(90, 0.4);
 					}
-					else{
-						stop();
-						timerStart = System.currentTimeMillis();
-						autoStep = Step.LAUNCH;
-					}
 				}
-				else{
-					if (getDistance() < 40){
-						driveStraight(-90, 0.4);
-					}
-					else{
+				else {
+					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
 						stop();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LAUNCH;
+					}
+					else{
+						driveStraight(-90, 0.4);
 					}
 				}				
 				break;
 			case LAUNCH:
-				if ((System.currentTimeMillis() - timerStart) < 500) {
-					gripperGroup.set(0.8);
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripper.set(1);
 				}
 				else{
-					gripperGroup.set(0);
+					gripper.set(0);
 					autoStep = Step.Done;
 				}
 				break;
 			case Done:
 				break;
 			}
+			return;
 		}
 		if (autoSelected.equalsIgnoreCase(leftScale) || autoSelected.equalsIgnoreCase(rightScale)) {
+			double distance = getDistance();
 					switch (autoStep) {
 					case Straight:
 						if (distance < 285) {
@@ -279,18 +287,16 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						break;
 					case Turn:
 						if (gameData.charAt(1) == 'L' && autoSelected == leftScale){
-							if (turnInPlace(90)) {
+							if (turnRight(90)) {
 								resetEncoders();
 								autoStep = Step.Done;
 								completeStop();
-								System.out.println("Game L leftscal PID turn");
 							}
 						}
 						else if(gameData.charAt(1) == 'R' && autoSelected == rightScale){
-							if (turnInPlace(-90)) {
+							if (turnLeft(-90)) {
 								resetEncoders();
 								completeStop();
-								System.out.println("Game R leftscale PID turn");
 								autoStep = Step.Done;
 							}
 						}
@@ -300,22 +306,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						}
 						break;
 					case CubeOut:
-						if (height < 75) {
-							elevatorGroup.set(0.4);
+						if (getElevatorheight() < 75) {
+							elevator.set(0.5);
 						} else {
-							if (distance < 10) {
-								driveStraight(90, 0.4);
-								elevatorGroup.set(0.05);
-							} else {
-								if (!limitSwitchGripper.get()) {
-									completeStop();
-									resetEncoders();
-									autoStep = Step.Straight2;
-								} else {
-									elevatorGroup.set(0.05);
-									gripperGroup.set(1);
-								}
-							}
+							elevator.set(0.05);
+							
 						}
 						break;
 					case Done:
@@ -323,6 +318,204 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						break;	
 			}
 		return;
+		}
+		if (autoSelected.equalsIgnoreCase(leftAngleScale) || autoSelected.equalsIgnoreCase(rightAngleScale)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case Straight:
+				if (gameData.charAt(1) == 'R' && autoSelected == rightAngleScale){
+					if (distance < 244){
+						driveStraight(-4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.Turn;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == leftAngleScale){
+					if (distance < 244){
+						driveStraight(4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.Turn;
+					}
+				}
+				else{
+					if (distance < 180){
+						driveStraight(0, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.Done;
+					}
+				}
+				break;
+			case Turn:
+				if (gameData.charAt(1) == 'R' && autoSelected == rightAngleScale){
+					if (turnLeft(-30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Lift;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == leftAngleScale){
+					if (turnRight(30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Lift;
+					}
+				}
+				else{
+					autoStep = Step.Done;
+					}
+				break;
+
+			case Lift:
+				// lift to 127 !!!
+				if (getElevatorheight() < 50 || (System.currentTimeMillis() - timerStart) < 2100){
+					elevator.set(-0.5);
+				}
+				else{
+					stop();
+					elevator.set(0);
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.LAUNCH;
+				}
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripper.set(1);
+				}
+				else{
+					gripper.set(0);
+					autoStep = Step.Done;
+				}
+				break;
+			case Done:
+				break;
+			}
+			return;
+		}
+		if (autoSelected.equalsIgnoreCase(leftBothSideScale) || autoSelected.equalsIgnoreCase(rightBothSideScale)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case Straight:
+				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'L') {
+					if (distance < 244){
+						driveStraight(4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.Turn;
+					}
+				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'R') {
+					if (distance < 244){
+						driveStraight(-4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.Turn;
+					}
+				} else if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
+					if (distance < 207) {
+						driveStraight(0, 0.5);
+					} else {
+						stop();
+						autoStep = Step.Turn;
+					}
+				} else {
+					if (distance < 207) {
+						driveStraight(0, 0.5);
+					} else {
+						stop();
+						autoStep = Step.Turn;
+					}
+				} 
+				break;
+			case Turn:
+				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'L') {
+					if (turnRight(30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Lift;
+					}
+				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'R') {
+					if (turnLeft(-30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.Lift;
+					}
+				} else if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
+					if (turnRight(90)) {
+						resetEncoders();
+						autoStep = Step.Straight2;
+					}
+				} else {
+					if (turnLeft(-90)) {
+						resetEncoders();
+						autoStep = Step.Straight2;
+					}
+				}
+				break;
+			case Straight2:
+				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
+					if (distance < 198) {
+						driveStraight(90, 0.5);
+					} else {
+						stop();
+						autoStep = Step.Turn2;
+					}
+				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'L') {
+					if (distance < 198) {
+						driveStraight(-90, 0.5);
+					}
+				} else {
+					autoStep = Step.Done;
+				}
+			case Turn2:
+				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
+					if (turnLeft(0)) {
+						resetEncoders();
+						autoStep = Step.Straight3;
+					} 
+				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'L') {
+					if (turnRight(0)) {
+						resetEncoders();
+						autoStep = Step.Straight3;
+					}
+				} else {
+					autoStep = Step.Done;
+				}
+			case Straight3:
+				if (distance < 58) {
+					driveStraight(0, 0.5);
+				} else {
+					stop();
+					autoStep = Step.Lift;
+				}
+			case Lift:
+				if (getElevatorheight() < 50 || (System.currentTimeMillis() - timerStart) < 2100){
+					elevator.set(-0.5);
+				}
+				else{
+					stop();
+					elevator.set(0);
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.LAUNCH;
+				}
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripper.set(1);
+				}
+				else{
+					gripper.set(0);
+					autoStep = Step.Done;
+				}
+				break;
+			}
+			return;
 		}
 	}
 			
@@ -578,8 +771,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		elevator2.set(0);
 	}
 	private void stopGripper() {
-		gripper1.set(0);
-		gripper2.set(0);
+		gripper.set(0);
 	}
 	private void completeStop() {
 		stop();
