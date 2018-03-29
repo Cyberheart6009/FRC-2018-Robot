@@ -60,8 +60,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	final String rightScale = "rightScale";
 	final String rightAngleScale = "rightAngleScale";
 	final String leftAngleScale = "leftAngleScale";
-	final String rightBothSideScale = "rightBothSideScale";
-	final String leftBothSideScale = "leftBothSideScale";
+	final String rightOppositeSideScale = "rightOppositeSideScale";
+	final String leftOppositeSideScale = "leftOppositeSideScale";
+	final String rightOppositeSideSwitch = "rightOppositeSideSwitch";
+	final String leftOppositeSideSwitch = "leftOppositeSideSwtich";
 	private String autoSelected;
 
 	
@@ -123,8 +125,10 @@ public class Robot extends IterativeRobot implements PIDOutput {
 		m_chooser.addDefault("rightScale", rightScale);
 		m_chooser.addObject("rightAngleScale", rightAngleScale);
 		m_chooser.addObject("leftAngleScale", leftAngleScale);
-		m_chooser.addObject("rightBothSideScale", rightBothSideScale);
-		m_chooser.addObject("leftBothSideScale", leftBothSideScale);
+		m_chooser.addObject("rightOppositeSideScale", rightOppositeSideScale);
+		m_chooser.addObject("leftOppositeSideScale", leftOppositeSideScale);
+		m_chooser.addObject("rightOppositeSideSwitch", rightOppositeSideSwitch);
+		m_chooser.addObject("leftOppositeSideSwitch", leftOppositeSideSwitch);
 		
 		//Display these choices in whatever interface we are using
 		SmartDashboard.putData("Auto Selected", m_chooser);
@@ -373,7 +377,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 
 			case Lift:
 				// lift to 127 !!!
-				if (getElevatorheight() < 50 || (System.currentTimeMillis() - timerStart) < 2100){
+				if (getElevatorheight() < 50 || (System.currentTimeMillis() - timerStart) > 2000){
 					elevator.set(-0.5);
 				}
 				else{
@@ -397,11 +401,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			}
 			return;
 		}
-		if (autoSelected.equalsIgnoreCase(leftBothSideScale) || autoSelected.equalsIgnoreCase(rightBothSideScale)) {
+		if (autoSelected.equalsIgnoreCase(leftOppositeSideScale) || autoSelected.equalsIgnoreCase(rightOppositeSideScale)) {
 			double distance = getDistance();
 			switch (autoStep) {
 			case Straight:
-				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'L') {
+				if (autoSelected == leftOppositeSideScale && gameData.charAt(1) == 'L') {
 					if (distance < 244){
 						driveStraight(4, 0.5);
 					}
@@ -409,18 +413,11 @@ public class Robot extends IterativeRobot implements PIDOutput {
 						stop();
 						autoStep = Step.Turn;
 					}
-				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'R') {
+				} else if (autoSelected == rightOppositeSideScale && gameData.charAt(1) == 'R') {
 					if (distance < 244){
 						driveStraight(-4, 0.5);
 					}
 					else{
-						stop();
-						autoStep = Step.Turn;
-					}
-				} else if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
-					if (distance < 207) {
-						driveStraight(0, 0.5);
-					} else {
 						stop();
 						autoStep = Step.Turn;
 					}
@@ -434,19 +431,19 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				} 
 				break;
 			case Turn:
-				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'L') {
+				if (autoSelected == leftOppositeSideScale && gameData.charAt(1) == 'L') {
 					if (turnRight(30)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.Lift;
 					}
-				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'R') {
+				} else if (autoSelected == rightOppositeSideScale && gameData.charAt(1) == 'R') {
 					if (turnLeft(-30)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.Lift;
 					}
-				} else if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
+				} else if (autoSelected == leftOppositeSideScale && gameData.charAt(1) == 'R') {
 					if (turnRight(90)) {
 						resetEncoders();
 						autoStep = Step.Straight2;
@@ -459,14 +456,14 @@ public class Robot extends IterativeRobot implements PIDOutput {
 				}
 				break;
 			case Straight2:
-				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
+				if (autoSelected == leftOppositeSideScale && gameData.charAt(1) == 'R') {
 					if (distance < 198) {
 						driveStraight(90, 0.5);
 					} else {
 						stop();
 						autoStep = Step.Turn2;
 					}
-				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'L') {
+				} else if (autoSelected == rightOppositeSideScale && gameData.charAt(1) == 'L') {
 					if (distance < 198) {
 						driveStraight(-90, 0.5);
 					}
@@ -474,12 +471,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					autoStep = Step.Done;
 				}
 			case Turn2:
-				if (autoSelected == leftBothSideScale && gameData.charAt(1) == 'R') {
+				if (autoSelected == leftOppositeSideScale && gameData.charAt(1) == 'R') {
 					if (turnLeft(0)) {
 						resetEncoders();
 						autoStep = Step.Straight3;
 					} 
-				} else if (autoSelected == rightBothSideScale && gameData.charAt(1) == 'L') {
+				} else if (autoSelected == rightOppositeSideScale && gameData.charAt(1) == 'L') {
 					if (turnRight(0)) {
 						resetEncoders();
 						autoStep = Step.Straight3;
@@ -495,7 +492,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					autoStep = Step.Lift;
 				}
 			case Lift:
-				if (getElevatorheight() < 50 || (System.currentTimeMillis() - timerStart) < 2100){
+				if (getElevatorheight() < 50 || (System.currentTimeMillis() - timerStart) > 2000){
 					elevator.set(-0.5);
 				}
 				else{
@@ -514,8 +511,18 @@ public class Robot extends IterativeRobot implements PIDOutput {
 					autoStep = Step.Done;
 				}
 				break;
+			case Done:
+				completeStop();
+				break;
 			}
 			return;
+		}
+		if (autoSelected.equalsIgnoreCase(leftOppositeSideSwitch) || autoSelected.equalsIgnoreCase(rightOppositeSideSwitch)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case Straight:
+				
+			}
 		}
 	}
 			
