@@ -202,10 +202,27 @@ public class Robot extends IterativeRobot {
 		autoSelected = (String) m_chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		/*if ((autoSelected.equalsIgnoreCase(LeftAngleScale) || (autoSelected.equalsIgnoreCase(RightAngleScale)))){
+			if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
+				autoSelected = RightAngleScale;
+			}
+			else if (gameData.charAt(1) == 'R' && autoSelected == RightAngleScale){
+				autoSelected = RightAngleScale;
+			}
+			else if ((gameData.charAt(1) != 'R' && autoSelected == RightAngleScale) && gameData.charAt(0) == 'R'){
+				autoSelected = RightSwitch;
+			}
+			else if ((gameData.charAt(1) != 'L' && autoSelected == LeftAngleScale) && gameData.charAt(0) == 'L') {
+				autoSelected = LeftSwitch;
+			}
+			else{
+				autoSelected = DriveStraight;
+			}
+		}*/
 		if ((autoSelected.equalsIgnoreCase(RightSwitch)) || autoSelected.equalsIgnoreCase(LeftSwitch)) {
 			autoStep = Step.STRAIGHT;
 		}
-		if ((autoSelected.equalsIgnoreCase(centerSwitch)) || (autoSelected.equalsIgnoreCase(centerOppositeSwitch))) {
+		if ((autoSelected.equalsIgnoreCase(centerSwitch))) {
 			autoStep = Step.STRAIGHT1CENTER;
 		}
 		else{
@@ -223,8 +240,25 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 		updateSmartDashboard();
+		if ((autoSelected.equalsIgnoreCase(LeftAngleScale) || (autoSelected.equalsIgnoreCase(RightAngleScale)))){
+			if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
+				autoSelected = LeftAngleScale;
+			}
+			else if (gameData.charAt(1) == 'R' && autoSelected == RightAngleScale){
+				autoSelected = RightAngleScale;
+			}
+			else if ((gameData.charAt(1) != 'R' && autoSelected == RightAngleScale) && gameData.charAt(0) == 'R'){
+				autoSelected = RightSwitch;
+			}
+			else if ((gameData.charAt(1) != 'L' && autoSelected == LeftAngleScale) && gameData.charAt(0) == 'L') {
+				autoSelected = LeftSwitch;
+			}
+			else{
+				autoSelected = DriveStraight;
+			}
+		}
 		if (autoSelected == DriveStraight) {
-			if (getDistance() < 150){
+			if (getDistance() < 180){
 				driveStraight(0, 0.5);
 				System.out.println("Going Straight");
 			}
@@ -572,12 +606,13 @@ public class Robot extends IterativeRobot {
 
 			case LIFT:
 				// lift to 127 !!!
-				if (getElevatorHeight() < 50){
-					elevator.set(-0.5);
+				if (getElevatorHeight() < 50 && (System.currentTimeMillis() - timerStart) < 2100){
+					elevator.set(-0.7);
 				}
 				else{
 					stop();
 					elevator.set(0);
+					timerStart = System.currentTimeMillis();
 					autoStep = Step.LAUNCH;
 				}
 				break;
@@ -624,7 +659,7 @@ public class Robot extends IterativeRobot {
 				break;
 			case STRAIGHT2CENTER:
 				if (gameData.charAt(0) == 'R'){
-					if (distance < 59){
+					if (distance < 49){
 						driveStraight(90, 0.5);
 					}
 					else{
@@ -633,7 +668,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else{
-					if (distance < 59){
+					if (distance < 62){
 						driveStraight(-90, 0.5);
 					}
 					else{
@@ -661,11 +696,12 @@ public class Robot extends IterativeRobot {
 				}
 				break;
 			case STRAIGHT3CENTER:
-				if (distance < 71 || (System.currentTimeMillis() - timerStart) > 2000){
+				if (distance < 71 && (System.currentTimeMillis() - timerStart) < 2500){
 					driveStraight(0, 0.5);
 				}
 				else{
 					stop();
+					timerStart = System.currentTimeMillis();
 					autoStep = Step.LAUNCH;
 				}
 				break;
@@ -711,16 +747,16 @@ public class Robot extends IterativeRobot {
 			elevatorEncoder.reset();
 			resetEncoders();
 			gyroscope.reset();
-		} *//*
+		} */
 		if (aButton){
-			TP_motor.set(1);
+			elevator.set(-0.5);
 		}
 		else if (bButton){
 			TP_motor.set(-1);
 		}
 		else{
-			TP_motor.set(0);
-		}*/
+			elevator.set(0);
+		}
 		
 		// OPERATOR CONTROLS
 		if (aButtonOp) {
