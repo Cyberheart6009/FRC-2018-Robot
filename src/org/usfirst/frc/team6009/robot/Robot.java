@@ -57,13 +57,15 @@ public class Robot extends IterativeRobot {
 	private static final String LeftAngleScale = "Left Angle Scale";
 	private static final String RightAngleScale = "Right Angle Scale";
 	private static final String centerOppositeSwitch = "Center Switch";
+	private static final String testAuto = "Test Mode";
 	private String autoSelected;
 	
 	//Variables
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
 	final static double DEGREES_PER_PIXEL = 0.100;
-	double currentSpeed;
+	double currentSpeed = 0.1;
+	double roboSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
 	String box_position = "NO DATA";
@@ -104,8 +106,11 @@ public class Robot extends IterativeRobot {
 	AHRS gyroscope;
 	// PID Variables -WIP
 	double kP = 0.03;
+	double smoothKp = 0.03;
 	
 	//Auto variables
+	public enum speedStep{ACCEL, COAST, DECCEL};
+	public speedStep driveStep = speedStep.ACCEL;
 	public enum Step {STRAIGHT, SHORT_STRAIGHT, SHORTER_STRAIGHT, STRAIGHT1CENTER, TURN1CENTER, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, TURN, TURN2, LIFT, TRACK, LAUNCH, DONE};
 	public Step autoStep = Step.STRAIGHT;
 	
@@ -131,6 +136,7 @@ public class Robot extends IterativeRobot {
 		m_chooser.addObject("Left Angle Scale", LeftAngleScale);
 		m_chooser.addObject("Right Angle Scale", RightAngleScale);
 		m_chooser.addObject("Center Scale", centerOppositeSwitch);
+		m_chooser.addObject("Test Auto", testAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
 		//final SerialPort.Port kUSB2;
 		
@@ -719,6 +725,16 @@ public class Robot extends IterativeRobot {
 			}
 		return;
 		}
+		if (autoSelected.equalsIgnoreCase(testAuto)){
+			if (getDistance() < 160){
+				smootherDrive(0,0.5,160);
+			}
+			else{
+				stop();
+				System.out.println("STOPPED");
+			}
+		}
+		return;
 	}
 
 	/**
@@ -728,7 +744,7 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 		tipPrevention();
 		chassis.arcadeDrive(driver.getX(), -driver.getY());
-		
+		System.out.println("Motor Power: " + driver.getY());
 		// Get Joystick Buttons
 		aButton = driver.getRawButton(1);
 		bButton = driver.getRawButton(2);
@@ -814,11 +830,11 @@ public class Robot extends IterativeRobot {
 	// Calculates the robotSpeed
 	public double robotSpeed() {
 		// Calculates current speed of the robot in m/s
-		currentSpeed = ((getDistance() - oldEncoderCounts)/(System.currentTimeMillis() - old_time)) * 0.0254;
+		roboSpeed = ((getDistance() - oldEncoderCounts)/(System.currentTimeMillis() - old_time)) * 0.0254;
 		
 		old_time = System.currentTimeMillis();
 		oldEncoderCounts = getDistance();
-		return (double) currentSpeed;
+		return (double) roboSpeed;
 	}
 
 	private double androidData(){
@@ -926,7 +942,6 @@ public class Robot extends IterativeRobot {
 		// calculate the speed for the motors
 		double leftSpeed = speed;
 		double rightSpeed = speed;
-		
 		// adjust the motor speed based on the compass error
 		if (error < 0) {
 			// turn left
@@ -938,10 +953,70 @@ public class Robot extends IterativeRobot {
 			// Slow down right motors
 			rightSpeed -= error * kP;
 		}
-	
 		// set the motors based on the inputed speed
 		leftChassis.set(leftSpeed);
 		rightChassis.set(rightSpeed);
+	}
+	
+	private void smoothDrive(double heading, double targetSpeed, double targetDistance){
+		System.out.println("Current Speed: " + currentSpeed);
+		if (getDistance() < 12 && currentSpeed < targetSpeed){
+			driveStep = speedStep.ACCEL;
+			System.out.println("Accelerating");
+		}
+		else if(getDistance() > targetDistance - ((58*(Math.pow((Math.pow(targetSpeed, 10)), 1.0/9))) + 5)){
+			driveStep = speedStep.DECCEL;
+			System.out.println("Deccelerating");
+		}
+		else{
+			driveStep = speedStep.COAST;
+			System.out.println("Coast");
+		}
+		switch (driveStep) {
+		case ACCEL:
+			currentSpeed += 0.02;
+			driveStraight(heading, currentSpeed);
+			break;
+		case DECCEL:
+			if (currentSpeed >= 0.1){
+				currentSpeed -= 0.05;
+			}
+			driveStraight(heading, currentSpeed);
+			break;
+		case COAST:
+			driveStraight(heading, targetSpeed);
+			break;
+		}		
+	}
+	
+	private void smootherDrive(double heading, double targetSpeed, double targetDistance) {
+		System.out.println("Current Speed: " + currentSpeed);
+		double error = targetDistance - getDistance();
+		if (getDistance() < 12 && currentSpeed < targetSpeed){
+			driveStep = speedStep.ACCEL;
+			System.out.println("Accelerating");
+		}
+		else if(getDistance() > targetDistance - 24){
+			driveStep = speedStep.DECCEL;
+			System.out.println("Deccelerating");
+		}
+		else{
+			driveStep = speedStep.COAST;
+			System.out.println("Coast");
+		}
+		switch (driveStep) {
+		case ACCEL:
+			currentSpeed += 0.02;
+			driveStraight(heading, currentSpeed);
+			break;
+		case DECCEL:
+			currentSpeed -= smoothKp * error;
+			driveStraight(heading, currentSpeed);
+			break;
+		case COAST:
+			driveStraight(heading, targetSpeed);
+			break;
+		}		
 	}
 	
 	private void stop(){
