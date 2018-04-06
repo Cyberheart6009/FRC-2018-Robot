@@ -106,7 +106,7 @@ public class Robot extends IterativeRobot {
 	//ADXRS450_Gyro gyroscope;
 	AHRS gyroscope;
 	// PID Variables -WIP
-	double kP = 0.08;
+	double kP = 0.04;
 	double smoothKp = 0.03;
 	
 	//Auto variables
@@ -730,7 +730,9 @@ public class Robot extends IterativeRobot {
 		if (autoSelected.equalsIgnoreCase(testAuto)){
 			if (getDistance() < 300){
 				//FIXME
-				smoothDrive(0, 1, 300);
+				// @ 1 = 12" overshoot
+				// @ 0.8 = 9" overshoot
+				smoothDrive(0, 0.8, 300);
 			}
 			else{
 				stop();
@@ -967,7 +969,7 @@ public class Robot extends IterativeRobot {
 			driveStep = speedStep.ACCEL;
 			System.out.println("Accelerating");
 		}// was 58 ((78*(Math.pow((Math.pow(targetSpeed, 10)), 1.0/9))) + 5)
-		else if(getDistance() > targetDistance - 120){
+		else if(getDistance() > targetDistance - (120*targetSpeed)){
 			driveStep = speedStep.DECCEL;
 			System.out.println("Deccelerating");
 		}
