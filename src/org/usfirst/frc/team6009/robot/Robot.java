@@ -75,6 +75,7 @@ public class Robot extends IterativeRobot {
 	boolean TP_Active, TP_Trigger = false;
 	double angle = 0;
 	double old_angle = 0;
+	int deccel_counter;
 	
 	// Smartdashboard Chooser object for Auto modes
 	private SendableChooser<String> m_chooser = new SendableChooser<>();
@@ -105,7 +106,7 @@ public class Robot extends IterativeRobot {
 	//ADXRS450_Gyro gyroscope;
 	AHRS gyroscope;
 	// PID Variables -WIP
-	double kP = 0.03;
+	double kP = 0.08;
 	double smoothKp = 0.03;
 	
 	//Auto variables
@@ -238,6 +239,7 @@ public class Robot extends IterativeRobot {
 		resetEncoders();
 		elevatorEncoder.reset();
 		gyroscope.reset();
+		deccel_counter = 0;
 	}
 
 	/**
@@ -726,8 +728,9 @@ public class Robot extends IterativeRobot {
 		return;
 		}
 		if (autoSelected.equalsIgnoreCase(testAuto)){
-			if (getDistance() < 160){
-				smootherDrive(0,0.5,160);
+			if (getDistance() < 300){
+				//FIXME
+				smoothDrive(0, 1, 300);
 			}
 			else{
 				stop();
@@ -963,8 +966,8 @@ public class Robot extends IterativeRobot {
 		if (getDistance() < 12 && currentSpeed < targetSpeed){
 			driveStep = speedStep.ACCEL;
 			System.out.println("Accelerating");
-		}
-		else if(getDistance() > targetDistance - ((58*(Math.pow((Math.pow(targetSpeed, 10)), 1.0/9))) + 5)){
+		}// was 58 ((78*(Math.pow((Math.pow(targetSpeed, 10)), 1.0/9))) + 5)
+		else if(getDistance() > targetDistance - 120){
 			driveStep = speedStep.DECCEL;
 			System.out.println("Deccelerating");
 		}
@@ -978,8 +981,19 @@ public class Robot extends IterativeRobot {
 			driveStraight(heading, currentSpeed);
 			break;
 		case DECCEL:
-			if (currentSpeed >= 0.1){
+			if (currentSpeed > 0.5){
 				currentSpeed -= 0.05;
+			}
+			else {
+				//FIXME
+				if (deccel_counter <= 70){
+					deccel_counter++;
+					//at 1 speed it was 0.25
+					currentSpeed = 0.27;
+				}
+				else{
+					currentSpeed = 0.4;
+				}
 			}
 			driveStraight(heading, currentSpeed);
 			break;
