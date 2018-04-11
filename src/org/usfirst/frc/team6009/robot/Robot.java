@@ -45,7 +45,7 @@ public class Robot extends IterativeRobot {
 	
 	// Auto Modes Setup
 	private static final String centerSwitch = "Center Switch";
-	private static final String DriveStraight = "Straight Drive";
+	private static final String DriveSTRAIGHT = "STRAIGHT Drive";
 	private static final String RightSwitch = "Right Switch";
 	private static final String LeftSwitch = "Left Switch";	
 	private static final String RightSwitchTest = "Right Switch";
@@ -56,6 +56,8 @@ public class Robot extends IterativeRobot {
 	private static final String RightScale = "Right Scale";
 	private static final String LeftAngleScale = "Left Angle Scale";
 	private static final String RightAngleScale = "Right Angle Scale";
+	private static final String LeftOppositeSideScale = "LeftOppositeSideScale";
+	private static final String RightOppositeSideScale = "RightOppositeSideScale";
 	private static final String centerOppositeSwitch = "Center Switch";
 	private static final String testAuto = "Test Mode";
 	private String autoSelected;
@@ -112,7 +114,7 @@ public class Robot extends IterativeRobot {
 	//Auto variables
 	public enum speedStep{ACCEL, COAST, DECCEL};
 	public speedStep driveStep = speedStep.ACCEL;
-	public enum Step {STRAIGHT, SHORT_STRAIGHT, SHORTER_STRAIGHT, STRAIGHT1CENTER, TURN1CENTER, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, TURN, TURN2, LIFT, TRACK, LAUNCH, DONE};
+	public enum Step {STRAIGHT, SHORT_STRAIGHT, SHORTER_STRAIGHT, STRAIGHT1CENTER, STRAIGHT2, TURN1CENTER, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, STRAIGHT3, TURN, TURN2, LIFT, TRACK, LAUNCH, DONE};
 	public Step autoStep = Step.STRAIGHT;
 	
 	//Serial Port Communication
@@ -127,7 +129,7 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		// Adds all of our previously created auto modes into the smartdashboard chooser
 		m_chooser.addObject("Center Switch", centerSwitch);
-		m_chooser.addDefault("My Auto", DriveStraight);
+		m_chooser.addDefault("My Auto", DriveSTRAIGHT);
 		m_chooser.addObject("Right Switch", RightSwitch);
 		m_chooser.addObject("Left Switch", LeftSwitch);
 		m_chooser.addObject("Double Left Switch", DoubleLeftSwitch);
@@ -136,6 +138,8 @@ public class Robot extends IterativeRobot {
 		m_chooser.addObject("Right Scale", RightScale);
 		m_chooser.addObject("Left Angle Scale", LeftAngleScale);
 		m_chooser.addObject("Right Angle Scale", RightAngleScale);
+		m_chooser.addObject("Left Opposite Side Scale", LeftOppositeSideScale);
+		m_chooser.addObject("RightOppositeSideScale", RightOppositeSideScale);
 		m_chooser.addObject("Center Scale", centerOppositeSwitch);
 		m_chooser.addObject("Test Auto", testAuto);
 		SmartDashboard.putData("Auto choices", m_chooser);
@@ -223,7 +227,7 @@ public class Robot extends IterativeRobot {
 				autoSelected = LeftSwitch;
 			}
 			else{
-				autoSelected = DriveStraight;
+				autoSelected = DriveSTRAIGHT;
 			}
 		}*/
 		if ((autoSelected.equalsIgnoreCase(RightSwitch)) || autoSelected.equalsIgnoreCase(LeftSwitch)) {
@@ -262,13 +266,13 @@ public class Robot extends IterativeRobot {
 				autoSelected = LeftSwitch;
 			}
 			else{
-				autoSelected = DriveStraight;
+				autoSelected = DriveSTRAIGHT;
 			}
 		}
-		if (autoSelected == DriveStraight) {
+		if (autoSelected == DriveSTRAIGHT) {
 			if (getDistance() < 180){
-				driveStraight(0, 0.5);
-				System.out.println("Going Straight");
+				driveSTRAIGHT(0, 0.5);
+				System.out.println("Going STRAIGHT");
 			}
 			else{
 				stop();
@@ -281,7 +285,7 @@ public class Robot extends IterativeRobot {
 			switch (autoStep) {
 			case STRAIGHT:
 				if (distance < 155){
-					driveStraight(0, 0.5);
+					driveSTRAIGHT(0, 0.5);
 				}
 				else{
 					stop();
@@ -316,7 +320,7 @@ public class Robot extends IterativeRobot {
 						autoStep = Step.LAUNCH;
 					}
 					else{
-						driveStraight(90, 0.4);
+						driveSTRAIGHT(90, 0.4);
 					}
 				}
 				else {
@@ -326,7 +330,7 @@ public class Robot extends IterativeRobot {
 						autoStep = Step.LAUNCH;
 					}
 					else{
-						driveStraight(-90, 0.4);
+						driveSTRAIGHT(-90, 0.4);
 					}
 				}				
 				break;
@@ -349,7 +353,7 @@ public class Robot extends IterativeRobot {
 			switch (autoStep) {
 			case STRAIGHT:
 				if (distance < 160){
-					driveStraight(0, 0.5);
+					driveSTRAIGHT(0, 0.5);
 				}
 				else{
 					stop();
@@ -358,7 +362,7 @@ public class Robot extends IterativeRobot {
 				}
 				if ((gameData.charAt(0) == 'L' && autoSelected == RightSwitchTest) || (gameData.charAt(0) == 'R' && autoSelected == LeftSwitchTest)) {
 					if (distance < 80){
-						driveStraight(0, 0.5);
+						driveSTRAIGHT(0, 0.5);
 					}
 					else{
 						stop();
@@ -390,7 +394,7 @@ public class Robot extends IterativeRobot {
 			case SHORT_STRAIGHT:
 				if (autoSelected == LeftSwitchTest && gameData.charAt(0) == 'L'){
 					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
-						driveStraight(90, 0.4);
+						driveSTRAIGHT(90, 0.4);
 					}
 					else{
 						stop();
@@ -400,7 +404,7 @@ public class Robot extends IterativeRobot {
 				}
 				else if (gameData.charAt(0) == 'R' && autoSelected == RightSwitchTest){
 					if (distance < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
-						driveStraight(-90, 0.4);
+						driveSTRAIGHT(-90, 0.4);
 					}
 					else{
 						stop();
@@ -410,7 +414,7 @@ public class Robot extends IterativeRobot {
 				}		
 				if (autoSelected == LeftSwitchTest && gameData.charAt(0) == 'R'){
 					if (distance < 153){
-						driveStraight(90, 0.4);
+						driveSTRAIGHT(90, 0.4);
 					}
 					else{
 						stop();
@@ -420,7 +424,7 @@ public class Robot extends IterativeRobot {
 				}
 				else if (gameData.charAt(0) == 'L' && autoSelected == RightSwitchTest){
 					if (distance < 153){
-						driveStraight(-90, 0.4);
+						driveSTRAIGHT(-90, 0.4);
 					}
 					else{
 						stop();
@@ -452,7 +456,7 @@ public class Robot extends IterativeRobot {
 			case SHORTER_STRAIGHT:
 				if (autoSelected == RightSwitchTest){
 					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
-						driveStraight(-225, 0.4);
+						driveSTRAIGHT(-225, 0.4);
 					}
 					else{
 						stop();
@@ -462,7 +466,7 @@ public class Robot extends IterativeRobot {
 				}
 				else if (autoSelected == LeftSwitchTest){
 					if (distance < 30 || ((System.currentTimeMillis() - timerStart) < 1000)){
-						driveStraight(225, 0.4);
+						driveSTRAIGHT(225, 0.4);
 					}
 					else{
 						stop();
@@ -490,7 +494,7 @@ public class Robot extends IterativeRobot {
 			case STRAIGHT:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightScale){
 					if (distance < 280){
-						driveStraight(0, 0.5);
+						driveSTRAIGHT(0, 0.5);
 					}
 					else{
 						stop();
@@ -499,7 +503,7 @@ public class Robot extends IterativeRobot {
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftScale){
 					if (distance < 280){
-						driveStraight(0, 0.5);
+						driveSTRAIGHT(0, 0.5);
 					}
 					else{
 						stop();
@@ -508,7 +512,7 @@ public class Robot extends IterativeRobot {
 				}
 				else{
 					if (distance < 180){
-						driveStraight(0, 0.5);
+						driveSTRAIGHT(0, 0.5);
 					}
 					else{
 						stop();
@@ -566,7 +570,7 @@ public class Robot extends IterativeRobot {
 			case STRAIGHT:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightAngleScale){
 					if (distance < 244){
-						driveStraight(-4, 0.5);
+						driveSTRAIGHT(-4, 0.5);
 					}
 					else{
 						stop();
@@ -575,7 +579,7 @@ public class Robot extends IterativeRobot {
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
 					if (distance < 244){
-						driveStraight(4, 0.5);
+						driveSTRAIGHT(4, 0.5);
 					}
 					else{
 						stop();
@@ -584,7 +588,7 @@ public class Robot extends IterativeRobot {
 				}
 				else{
 					if (distance < 180){
-						driveStraight(0, 0.5);
+						driveSTRAIGHT(0, 0.5);
 					}
 					else{
 						stop();
@@ -643,7 +647,7 @@ public class Robot extends IterativeRobot {
 			switch (autoStep) {
 			case STRAIGHT1CENTER:
 				if (distance < 29){
-					driveStraight(0, 0.5);
+					driveSTRAIGHT(0, 0.5);
 				}
 				else{
 					stop();
@@ -668,7 +672,7 @@ public class Robot extends IterativeRobot {
 			case STRAIGHT2CENTER:
 				if (gameData.charAt(0) == 'R'){
 					if (distance < 49){
-						driveStraight(90, 0.5);
+						driveSTRAIGHT(90, 0.5);
 					}
 					else{
 						stop();
@@ -677,7 +681,7 @@ public class Robot extends IterativeRobot {
 				}
 				else{
 					if (distance < 62){
-						driveStraight(-90, 0.5);
+						driveSTRAIGHT(-90, 0.5);
 					}
 					else{
 						stop();
@@ -705,7 +709,7 @@ public class Robot extends IterativeRobot {
 				break;
 			case STRAIGHT3CENTER:
 				if (distance < 71 && (System.currentTimeMillis() - timerStart) < 2500){
-					driveStraight(0, 0.5);
+					driveSTRAIGHT(0, 0.5);
 				}
 				else{
 					stop();
@@ -726,6 +730,121 @@ public class Robot extends IterativeRobot {
 				break;
 			}
 		return;
+		}
+		if (autoSelected.equalsIgnoreCase(LeftOppositeSideScale) || autoSelected.equalsIgnoreCase(RightOppositeSideScale)) {
+			double distance = getDistance();
+			switch (autoStep) {
+			case STRAIGHT:
+				if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'L') {
+					if (distance < 244){
+						driveSTRAIGHT(4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN;
+					}
+				} else if (autoSelected == RightOppositeSideScale && gameData.charAt(1) == 'R') {
+					if (distance < 244){
+						driveSTRAIGHT(-4, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN;
+					}
+				} else {
+					if (distance < 207) {
+						driveSTRAIGHT(0, 0.5);
+					} else {
+						stop();
+						autoStep = Step.TURN;
+					}
+				} 
+				break;
+			case TURN:
+				if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'L') {
+					if (turnRight(30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT;
+					}
+				} else if (autoSelected == RightOppositeSideScale && gameData.charAt(1) == 'R') {
+					if (turnLeft(-30)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT;
+					}
+				} else if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'R') {
+					if (turnRight(90)) {
+						resetEncoders();
+						autoStep = Step.STRAIGHT2;
+					}
+				} else {
+					if (turnLeft(-90)) {
+						resetEncoders();
+						autoStep = Step.STRAIGHT2;
+					}
+				}
+				break;
+			case STRAIGHT2:
+				if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'R') {
+					if (distance < 198) {
+						driveSTRAIGHT(90, 0.5);
+					} else {
+						stop();
+						autoStep = Step.TURN2;
+					}
+				} else if (autoSelected == RightOppositeSideScale && gameData.charAt(1) == 'L') {
+					if (distance < 198) {
+						driveSTRAIGHT(-90, 0.5);
+					}
+				} else {
+					autoStep = Step.DONE;
+				}
+			case TURN2:
+				if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'R') {
+					if (turnLeft(0)) {
+						resetEncoders();
+						autoStep = Step.STRAIGHT3;
+					} 
+				} else if (autoSelected == RightOppositeSideScale && gameData.charAt(1) == 'L') {
+					if (turnRight(0)) {
+						resetEncoders();
+						autoStep = Step.STRAIGHT3;
+					}
+				} else {
+					autoStep = Step.DONE;
+				}
+			case STRAIGHT3:
+				if (distance < 55) {
+					driveSTRAIGHT(0, 0.5);
+				} else {
+					stop();
+					autoStep = Step.LIFT;
+				}
+			case LIFT:
+				if (getElevatorHeight() < 50 || (System.currentTimeMillis() - timerStart) < 2100){
+					elevator.set(-0.7);
+				}
+				else{
+					stop();
+					elevator.set(0);
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.LAUNCH;
+				}
+				break;
+			case LAUNCH:
+				if ((System.currentTimeMillis() - timerStart) < 2000) {
+					gripper.set(1);
+				}
+				else{
+					gripper.set(0);
+					autoStep = Step.DONE;
+				}
+				break;
+			case DONE:
+				break;
+			}
+			return;
 		}
 		if (autoSelected.equalsIgnoreCase(testAuto)){
 			if (getDistance() < 300){
@@ -939,10 +1058,10 @@ public class Robot extends IterativeRobot {
 		
 	}
 	
-	private void driveStraight(double heading, double speed) {
+	private void driveSTRAIGHT(double heading, double speed) {
 		// get the current heading and calculate a heading error
 		double currentAngle = (gyroscope.getAngle()%360.0);
-		//System.out.println("driveStraight");
+		//System.out.println("driveSTRAIGHT");
 		double error = heading - currentAngle;
 		// calculate the speed for the motors
 		double leftSpeed = speed;
@@ -980,7 +1099,7 @@ public class Robot extends IterativeRobot {
 		switch (driveStep) {
 		case ACCEL:
 			currentSpeed += 0.02;
-			driveStraight(heading, currentSpeed);
+			driveSTRAIGHT(heading, currentSpeed);
 			break;
 		case DECCEL:
 			if (currentSpeed > 0.5){
@@ -997,10 +1116,10 @@ public class Robot extends IterativeRobot {
 					currentSpeed = 0.4;
 				}
 			}
-			driveStraight(heading, currentSpeed);
+			driveSTRAIGHT(heading, currentSpeed);
 			break;
 		case COAST:
-			driveStraight(heading, targetSpeed);
+			driveSTRAIGHT(heading, targetSpeed);
 			break;
 		}		
 	}
@@ -1023,14 +1142,14 @@ public class Robot extends IterativeRobot {
 		switch (driveStep) {
 		case ACCEL:
 			currentSpeed += 0.02;
-			driveStraight(heading, currentSpeed);
+			driveSTRAIGHT(heading, currentSpeed);
 			break;
 		case DECCEL:
 			currentSpeed -= smoothKp * error;
-			driveStraight(heading, currentSpeed);
+			driveSTRAIGHT(heading, currentSpeed);
 			break;
 		case COAST:
-			driveStraight(heading, targetSpeed);
+			driveSTRAIGHT(heading, targetSpeed);
 			break;
 		}		
 	}
@@ -1049,11 +1168,11 @@ public class Robot extends IterativeRobot {
 		rightBack.set(0.45);
 		rightFront.set(0.45);
 
-		System.out.println("Turning Right");
+		System.out.println("TURNing Right");
 		
 		double currentAngle = gyroscope.getAngle();
 		if (currentAngle >= targetAngle - 2){
-			System.out.println("Stopped Turning Right");
+			System.out.println("Stopped TURNing Right");
 			return true;
 		}
 		return false;
