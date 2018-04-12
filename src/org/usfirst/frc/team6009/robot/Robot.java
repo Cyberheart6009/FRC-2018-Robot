@@ -52,8 +52,8 @@ public class Robot extends IterativeRobot {
 	private static final String LeftSwitchTest = "Left Switch";
 	private static final String DoubleRightSwitch = "Double Right Switch";
 	private static final String DoubleLeftSwitch = "Double Left Switch";
-	private static final String LeftScale = "Left Scale";
-	private static final String RightScale = "Right Scale";
+	private static final String LeftDoubleScale = "Left Double Scale";
+	private static final String RightDoubleScale = "Right Double Scale";
 	private static final String LeftAngleScale = "Left Angle Scale";
 	private static final String RightAngleScale = "Right Angle Scale";
 	private static final String LeftOppositeSideScale = "LeftOppositeSideScale";
@@ -114,7 +114,7 @@ public class Robot extends IterativeRobot {
 	//Auto variables
 	public enum speedStep{ACCEL, COAST, DECCEL};
 	public speedStep driveStep = speedStep.ACCEL;
-	public enum Step {STRAIGHT, SHORT_STRAIGHT, SHORTER_STRAIGHT, STRAIGHT1CENTER, STRAIGHT2, TURN1CENTER, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, STRAIGHT3, TURN, TURN2, LIFT, TRACK, LAUNCH, DONE};
+	public enum Step {STRAIGHT, SHORT_STRAIGHT, SHORTER_STRAIGHT, STRAIGHT1CENTER, STRAIGHT2, TURN1CENTER,INTAKEDRIVE, STRAIGHT2CENTER, TURN2CENTER, STRAIGHT3CENTER, STRAIGHT3, TURN, TURN2, TURN3, TURN4, LIFT, LIFT2, DESCEND, TRACK, LAUNCH, LAUNCH2, DONE};
 	public Step autoStep = Step.STRAIGHT;
 	
 	//Serial Port Communication
@@ -134,8 +134,8 @@ public class Robot extends IterativeRobot {
 		m_chooser.addObject("Left Switch", LeftSwitch);
 		m_chooser.addObject("Double Left Switch", DoubleLeftSwitch);
 		m_chooser.addObject("Double Right Switch", DoubleRightSwitch);
-		m_chooser.addObject("Left Scale", LeftScale);
-		m_chooser.addObject("Right Scale", RightScale);
+		m_chooser.addObject("Left Double Scale", LeftDoubleScale);
+		m_chooser.addObject("Right Double Scale", RightDoubleScale);
 		m_chooser.addObject("Left Angle Scale", LeftAngleScale);
 		m_chooser.addObject("Right Angle Scale", RightAngleScale);
 		m_chooser.addObject("Left Opposite Side Scale", LeftOppositeSideScale);
@@ -488,22 +488,27 @@ public class Robot extends IterativeRobot {
 			}
 			return;
 		}
-		if (autoSelected.equalsIgnoreCase(RightScale) || autoSelected.equalsIgnoreCase(LeftScale)) {
+		
+		// FIXME: Double Scale Code - begin to hack together
+		// 			Change Timed based lift / descent to encoder counts
+		//			Must test to see if smooth drive distances are working
+		// Should be 10 - 11 cases (11th is the bring down arms at end of auto)
+		if (autoSelected.equalsIgnoreCase(RightDoubleScale) || autoSelected.equalsIgnoreCase(LeftDoubleScale)) {
 			double distance = getDistance();
 			switch (autoStep) {
 			case STRAIGHT:
-				if (gameData.charAt(1) == 'R' && autoSelected == RightScale){
-					if (distance < 280){
-						driveSTRAIGHT(0, 0.5);
+				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+					if (distance < 252){ // Was 244
+						smoothDrive(-5, 1, 235);
 					}
 					else{
 						stop();
 						autoStep = Step.TURN;
 					}
 				}
-				else if (gameData.charAt(1) == 'L' && autoSelected == LeftScale){
-					if (distance < 280){
-						driveSTRAIGHT(0, 0.5);
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+					if (distance < 252){ // was 244
+						smoothDrive(5, 1, 235);
 					}
 					else{
 						stop();
@@ -515,43 +520,178 @@ public class Robot extends IterativeRobot {
 						driveSTRAIGHT(0, 0.5);
 					}
 					else{
+						elevator.set(0);
 						stop();
 						autoStep = Step.DONE;
 					}
 				}
 				break;
 			case TURN:
-				if (gameData.charAt(1) == 'R' && autoSelected == RightScale){
-					if (turnLeft(-90)) {
+				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+					if (turnLeft(-30)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LIFT;
 					}
 				}
-				else if(gameData.charAt(1) == 'L' && autoSelected == LeftScale){
-					if (turnRight(90)) {
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+					if (turnRight(30)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LIFT;
 					}
 				}
 				else{
-					stop();
 					autoStep = Step.DONE;
-				}
+					}
 				break;
+
 			case LIFT:
-				if (getElevatorHeight() < 80){
-					elevator.set(0.8);
+				// lift to 127 !!!
+				if (getElevatorHeight() < 170 && (System.currentTimeMillis() - timerStart) < 2500){
+					elevator.set(-0.7);
 				}
 				else{
 					stop();
 					elevator.set(0);
+					timerStart = System.currentTimeMillis();
 					autoStep = Step.LAUNCH;
 				}
 				break;
 			case LAUNCH:
-				if ((System.currentTimeMillis() - timerStart) < 2000) {
+				if ((System.currentTimeMillis() - timerStart) < 750) {
+					gripper.set(1);
+				}
+				else{
+					gripper.set(0);
+					autoStep = Step.DESCEND;
+				}
+				break;
+			case DESCEND:
+				if (getElevatorHeight() > 5){
+					elevator.set(0.4);
+				}
+				else{
+					stop();
+					elevator.set(0);
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.TURN2;
+				}
+				break;
+			case TURN2:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+					if (turnLeft(-155)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.INTAKEDRIVE;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+					if (turnRight(155)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.INTAKEDRIVE;
+					}
+				}
+				else{
+					autoStep = Step.DONE;
+					}
+				break;
+			case INTAKEDRIVE:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+					if (distance < 55){ // Was 244
+						driveSTRAIGHT(-155, 0.5);
+						gripper.set(0);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN3;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+					if (distance < 55){ // was 244
+						driveSTRAIGHT(155, 0.5);
+						gripper.set(-1);
+					}
+					else{
+						stop();
+						gripper.set(0);
+						autoStep = Step.TURN3;
+					}
+				}
+				break;
+			case TURN3:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+					if (turnRight(8)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+					if (turnLeft(-8)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.SHORT_STRAIGHT;
+					}
+				}
+				else{
+					autoStep = Step.DONE;
+					}
+				break;
+			case SHORT_STRAIGHT:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+					if (distance < 28){ // Was 244
+						driveSTRAIGHT(1, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN4;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+					if (distance < 28){ // was 244
+						driveSTRAIGHT(-1, 0.5);
+					}
+					else{
+						stop();
+						autoStep = Step.TURN4;
+					}
+				}
+				break;
+			case TURN4:
+				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+					if (turnLeft(0)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT2;
+					}
+				}
+				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+					if (turnRight(0)) {
+						resetEncoders();
+						timerStart = System.currentTimeMillis();
+						autoStep = Step.LIFT2;
+					}
+				}
+				else{
+					autoStep = Step.DONE;
+					}
+				break;
+			case LIFT2:
+				// lift to 127 !!!
+				if (getElevatorHeight() < 170 && (System.currentTimeMillis() - timerStart) < 2500){
+					elevator.set(-0.7);
+				}
+				else{
+					stop();
+					elevator.set(0);
+					timerStart = System.currentTimeMillis();
+					autoStep = Step.LAUNCH2;
+				}
+				break;
+			case LAUNCH2:
+				if ((System.currentTimeMillis() - timerStart) < 1000) {
 					gripper.set(1);
 				}
 				else{
@@ -618,7 +758,7 @@ public class Robot extends IterativeRobot {
 
 			case LIFT:
 				// lift to 127 !!!
-				if (getElevatorHeight() < 50 && (System.currentTimeMillis() - timerStart) < 2100){
+				if (getElevatorHeight() < 170 && (System.currentTimeMillis() - timerStart) < 2100){
 					elevator.set(-0.7);
 				}
 				else{
@@ -889,14 +1029,14 @@ public class Robot extends IterativeRobot {
 			gyroscope.reset();
 		} */
 		if (aButton){
-			elevator.set(-0.5);
-		}
+			elevatorEncoder.reset();
+		}/*
 		else if (bButton){
 			TP_motor.set(-1);
 		}
 		else{
 			elevator.set(0);
-		}
+		}*/
 		
 		// OPERATOR CONTROLS
 		if (aButtonOp) {
