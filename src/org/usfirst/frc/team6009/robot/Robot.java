@@ -66,7 +66,7 @@ public class Robot extends IterativeRobot {
 	final static double ENCODER_COUNTS_PER_INCH = 13.49;
 	final static double ELEVATOR_ENCODER_COUNTS_PER_INCH = 182.13;
 	final static double DEGREES_PER_PIXEL = 0.100;
-	double currentSpeed = 0.1;
+	double currentSpeed = 0.3;
 	double roboSpeed;
 	double oldEncoderCounts = 0;
 	long old_time = 0;
@@ -213,21 +213,21 @@ public class Robot extends IterativeRobot {
 		autoSelected = (String) m_chooser.getSelected();
 		System.out.println("Auto selected: " + autoSelected);
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		/*if ((autoSelected.equalsIgnoreCase(LeftAngleScale) || (autoSelected.equalsIgnoreCase(RightAngleScale)))){
-			if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
-				autoSelected = RightAngleScale;
+		/*if ((autoSelected.equalsIgnoreCase(LeftDoubleScale) || (autoSelected.equalsIgnoreCase(RightDoubleScale)))){
+			if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+				autoSelected = RightDoubleScale;
 			}
-			else if (gameData.charAt(1) == 'R' && autoSelected == RightAngleScale){
-				autoSelected = RightAngleScale;
+			else if (gameData.charAt(1) == 'L' && autoSelected == RightDoubleScale){
+				autoSelected = RightOppositeSideScale;
 			}
-			else if ((gameData.charAt(1) != 'R' && autoSelected == RightAngleScale) && gameData.charAt(0) == 'R'){
-				autoSelected = RightSwitch;
+			if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+				autoSelected = LeftDoubleScale;
 			}
-			else if ((gameData.charAt(1) != 'L' && autoSelected == LeftAngleScale) && gameData.charAt(0) == 'L') {
-				autoSelected = LeftSwitch;
+			else if (gameData.charAt(1) == 'R' && autoSelected == LeftDoubleScale){
+				autoSelected = LeftOppositeSideScale;
 			}
 			else{
-				autoSelected = DriveSTRAIGHT;
+				autoSelected = autoSelected;
 			}
 		}*/
 		if ((autoSelected.equalsIgnoreCase(RightSwitch)) || autoSelected.equalsIgnoreCase(LeftSwitch)) {
@@ -252,23 +252,24 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 		updateSmartDashboard();
-		if ((autoSelected.equalsIgnoreCase(LeftAngleScale) || (autoSelected.equalsIgnoreCase(RightAngleScale)))){
-			if (gameData.charAt(1) == 'L' && autoSelected == LeftAngleScale){
-				autoSelected = LeftAngleScale;
+		/*
+		if ((autoSelected.equalsIgnoreCase(LeftDoubleScale) || (autoSelected.equalsIgnoreCase(RightDoubleScale)))){
+			if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
+				autoSelected = RightDoubleScale;
 			}
-			else if (gameData.charAt(1) == 'R' && autoSelected == RightAngleScale){
-				autoSelected = RightAngleScale;
+			else if (gameData.charAt(1) == 'L' && autoSelected == RightDoubleScale){
+				autoSelected = RightOppositeSideScale;
 			}
-			else if ((gameData.charAt(1) != 'R' && autoSelected == RightAngleScale) && gameData.charAt(0) == 'R'){
-				autoSelected = RightSwitch;
+			if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
+				autoSelected = LeftDoubleScale;
 			}
-			else if ((gameData.charAt(1) != 'L' && autoSelected == LeftAngleScale) && gameData.charAt(0) == 'L') {
-				autoSelected = LeftSwitch;
+			else if (gameData.charAt(1) == 'R' && autoSelected == LeftDoubleScale){
+				autoSelected = LeftOppositeSideScale;
 			}
 			else{
-				autoSelected = DriveSTRAIGHT;
+				autoSelected = autoSelected;
 			}
-		}
+		}*/
 		if (autoSelected == DriveSTRAIGHT) {
 			if (getDistance() < 180){
 				driveSTRAIGHT(0, 0.5);
@@ -324,7 +325,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else {
-					if (distance < 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
+					if (distance > 30 || ((System.currentTimeMillis() - timerStart) > 1000)){
 						stop();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LAUNCH;
@@ -335,7 +336,7 @@ public class Robot extends IterativeRobot {
 				}				
 				break;
 			case LAUNCH:
-				if ((System.currentTimeMillis() - timerStart) < 2000) {
+				if ((System.currentTimeMillis() - timerStart) < 1000) {
 					gripper.set(1);
 				}
 				else{
@@ -498,8 +499,8 @@ public class Robot extends IterativeRobot {
 			switch (autoStep) {
 			case STRAIGHT:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
-					if (distance < 252){ // Was 244
-						smoothDrive(-5, 1, 235);
+					if (distance < 243){ // Was 244
+						smoothDrive(-5, 1, 237);
 					}
 					else{
 						stop();
@@ -507,8 +508,8 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
-					if (distance < 252){ // was 244
-						smoothDrive(5, 1, 235);
+					if (distance < 243){ // was 244
+						smoothDrive(5, 1, 237);
 					}
 					else{
 						stop();
@@ -528,14 +529,16 @@ public class Robot extends IterativeRobot {
 				break;
 			case TURN:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
-					if (turnLeft(-30)) {
+					if (turnLeft(-20)) {
+						stop();
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LIFT;
 					}
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
-					if (turnRight(30)) {
+					if (turnRight(20)) {
+						stop();
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LIFT;
@@ -549,7 +552,7 @@ public class Robot extends IterativeRobot {
 			case LIFT:
 				// lift to 127 !!!
 				if (getElevatorHeight() < 170 && (System.currentTimeMillis() - timerStart) < 2500){
-					elevator.set(-0.7);
+					elevator.set(-0.8);
 				}
 				else{
 					stop();
@@ -559,7 +562,7 @@ public class Robot extends IterativeRobot {
 				}
 				break;
 			case LAUNCH:
-				if ((System.currentTimeMillis() - timerStart) < 750) {
+				if ((System.currentTimeMillis() - timerStart) < 450) {
 					gripper.set(1);
 				}
 				else{
@@ -569,7 +572,7 @@ public class Robot extends IterativeRobot {
 				break;
 			case DESCEND:
 				if (getElevatorHeight() > 5){
-					elevator.set(0.4);
+					elevator.set(0.7);
 				}
 				else{
 					stop();
@@ -580,14 +583,14 @@ public class Robot extends IterativeRobot {
 				break;
 			case TURN2:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
-					if (turnLeft(-155)) {
+					if (turnLeft(-156)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.INTAKEDRIVE;
 					}
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
-					if (turnRight(155)) {
+					if (turnRight(156)) {
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.INTAKEDRIVE;
@@ -599,9 +602,9 @@ public class Robot extends IterativeRobot {
 				break;
 			case INTAKEDRIVE:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
-					if (distance < 55){ // Was 244
-						driveSTRAIGHT(-155, 0.5);
-						gripper.set(0);
+					if (distance < 42){ // Was 244
+						driveSTRAIGHT(-156, 0.5);
+						gripper.set(-1);
 					}
 					else{
 						stop();
@@ -609,13 +612,12 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
-					if (distance < 55){ // was 244
-						driveSTRAIGHT(155, 0.5);
+					if (distance < 42){ // was 244
+						driveSTRAIGHT(156, 0.5);
 						gripper.set(-1);
 					}
 					else{
 						stop();
-						gripper.set(0);
 						autoStep = Step.TURN3;
 					}
 				}
@@ -624,6 +626,7 @@ public class Robot extends IterativeRobot {
 				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
 					if (turnRight(8)) {
 						resetEncoders();
+						gripper.set(0);
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
 					}
@@ -631,6 +634,8 @@ public class Robot extends IterativeRobot {
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
 					if (turnLeft(-8)) {
 						resetEncoders();
+
+						gripper.set(0);
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.SHORT_STRAIGHT;
 					}
@@ -641,7 +646,7 @@ public class Robot extends IterativeRobot {
 				break;
 			case SHORT_STRAIGHT:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
-					if (distance < 28){ // Was 244
+					if (distance < 36){ // Was 244
 						driveSTRAIGHT(1, 0.5);
 					}
 					else{
@@ -650,7 +655,7 @@ public class Robot extends IterativeRobot {
 					}
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
-					if (distance < 28){ // was 244
+					if (distance < 36){ // was 244
 						driveSTRAIGHT(-1, 0.5);
 					}
 					else{
@@ -661,14 +666,16 @@ public class Robot extends IterativeRobot {
 				break;
 			case TURN4:
 				if (gameData.charAt(1) == 'R' && autoSelected == RightDoubleScale){
-					if (turnLeft(0)) {
+					if (turnLeft(-20)) {
+						stop();
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LIFT2;
 					}
 				}
 				else if (gameData.charAt(1) == 'L' && autoSelected == LeftDoubleScale){
-					if (turnRight(0)) {
+					if (turnRight(20)) {
+						stop();
 						resetEncoders();
 						timerStart = System.currentTimeMillis();
 						autoStep = Step.LIFT2;
@@ -681,7 +688,7 @@ public class Robot extends IterativeRobot {
 			case LIFT2:
 				// lift to 127 !!!
 				if (getElevatorHeight() < 170 && (System.currentTimeMillis() - timerStart) < 2500){
-					elevator.set(-0.7);
+					elevator.set(-0.8);
 				}
 				else{
 					stop();
@@ -691,8 +698,8 @@ public class Robot extends IterativeRobot {
 				}
 				break;
 			case LAUNCH2:
-				if ((System.currentTimeMillis() - timerStart) < 1000) {
-					gripper.set(1);
+				if ((System.currentTimeMillis() - timerStart) < 450) {
+					gripper.set(0.8);
 				}
 				else{
 					gripper.set(0);
@@ -893,7 +900,7 @@ public class Robot extends IterativeRobot {
 					}
 				} else {
 					if (distance < 207) {
-						driveSTRAIGHT(0, 0.5);
+						smoothDrive(0, 1, 205);
 					} else {
 						stop();
 						autoStep = Step.TURN;
@@ -927,19 +934,20 @@ public class Robot extends IterativeRobot {
 				break;
 			case STRAIGHT2:
 				if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'R') {
-					if (distance < 198) {
-						driveSTRAIGHT(90, 0.5);
+					if (distance < 233) {
+						smoothDrive(90, 1, 228);
 					} else {
 						stop();
 						autoStep = Step.TURN2;
 					}
 				} else if (autoSelected == RightOppositeSideScale && gameData.charAt(1) == 'L') {
-					if (distance < 198) {
-						driveSTRAIGHT(-90, 0.5);
+					if (distance < 233) {
+						smoothDrive(-90, 1, 228);
 					}
 				} else {
-					autoStep = Step.DONE;
+					autoStep = Step.TURN2;
 				}
+				break;
 			case TURN2:
 				if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'R') {
 					if (turnLeft(0)) {
@@ -954,16 +962,35 @@ public class Robot extends IterativeRobot {
 				} else {
 					autoStep = Step.DONE;
 				}
+				break;
 			case STRAIGHT3:
-				if (distance < 55) {
+				if (distance < 45) {
 					driveSTRAIGHT(0, 0.5);
 				} else {
 					stop();
-					autoStep = Step.LIFT;
+					autoStep = Step.TURN3;
 				}
+				break;
+			case TURN3:
+				if (autoSelected == LeftOppositeSideScale && gameData.charAt(1) == 'R') {
+					if (turnLeft(-60)) {
+						stop();
+						resetEncoders();
+						autoStep = Step.LIFT;
+					} 
+				} else if (autoSelected == RightOppositeSideScale && gameData.charAt(1) == 'L') {
+					if (turnRight(60)) {
+						stop();
+						resetEncoders();
+						autoStep = Step.LIFT;
+					}
+				} else {
+					autoStep = Step.DONE;
+				}
+				break;
 			case LIFT:
-				if (getElevatorHeight() < 50 || (System.currentTimeMillis() - timerStart) < 2100){
-					elevator.set(-0.7);
+				if (getElevatorHeight() < 170 || (System.currentTimeMillis() - timerStart) < 2500){
+					elevator.set(-0.8);
 				}
 				else{
 					stop();
@@ -1095,7 +1122,6 @@ public class Robot extends IterativeRobot {
 	public double robotSpeed() {
 		// Calculates current speed of the robot in m/s
 		roboSpeed = ((getDistance() - oldEncoderCounts)/(System.currentTimeMillis() - old_time)) * 0.0254;
-		
 		old_time = System.currentTimeMillis();
 		oldEncoderCounts = getDistance();
 		return (double) roboSpeed;
@@ -1228,7 +1254,7 @@ public class Robot extends IterativeRobot {
 			driveStep = speedStep.ACCEL;
 			System.out.println("Accelerating");
 		}// was 58 ((78*(Math.pow((Math.pow(targetSpeed, 10)), 1.0/9))) + 5)
-		else if(getDistance() > targetDistance - (120*targetSpeed)){
+		else if(getDistance() > targetDistance - (50*targetSpeed)){
 			driveStep = speedStep.DECCEL;
 			System.out.println("Deccelerating");
 		}
@@ -1247,13 +1273,13 @@ public class Robot extends IterativeRobot {
 			}
 			else {
 				//FIXME
-				if (deccel_counter <= 70){
+				if (deccel_counter <= 40 - 10 ){
 					deccel_counter++;
 					//at 1 speed it was 0.25
 					currentSpeed = 0.27;
 				}
 				else{
-					currentSpeed = 0.4;
+					currentSpeed = 0.4; // raise to 0.5?
 				}
 			}
 			driveSTRAIGHT(heading, currentSpeed);
@@ -1303,10 +1329,10 @@ public class Robot extends IterativeRobot {
 	
 	private boolean turnRight(double targetAngle){
 		// We want to turn in place to 60 degrees 
-		leftBack.set(0.45);
-		leftFront.set(0.45);
-		rightBack.set(0.45);
-		rightFront.set(0.45);
+		leftBack.set(0.55);
+		leftFront.set(0.55);
+		rightBack.set(0.55);
+		rightFront.set(0.55);
 
 		System.out.println("TURNing Right");
 		
@@ -1319,10 +1345,10 @@ public class Robot extends IterativeRobot {
 	}
 	private boolean turnLeft(double targetAngle){
 		// We want to turn in place to 60 degrees 
-		leftBack.set(-0.45);
-		leftFront.set(-0.45);
-		rightBack.set(-0.45);
-		rightFront.set(-0.45);
+		leftBack.set(-0.55);
+		leftFront.set(-0.55);
+		rightBack.set(-0.55);
+		rightFront.set(-0.55);
 
 		double currentAngle = gyroscope.getAngle();
 		if (currentAngle <= targetAngle + 2){
